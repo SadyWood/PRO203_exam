@@ -22,6 +22,7 @@ public class User {
     private UUID id;
 
     // ----------------------------------------- OPENID Fields ----------------------------------------- //
+    //OpenID identifier
     @Column(name = "openid_subject", unique = true, nullable = false, length = 255)
     private String openIdSubject;
 
@@ -32,6 +33,7 @@ public class User {
     private String name;
 
     // ----------------------------------------- System Fields ----------------------------------------- //
+    // Role for authorization
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
     private UserRole role;
