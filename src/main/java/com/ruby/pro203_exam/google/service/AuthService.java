@@ -30,10 +30,15 @@ public class AuthService {
                         .build();
         GoogleIdToken idToken = verifier.verify(idTokenString);
 
-        if (idToken == null) {
+        if (idToken != null) {
             GoogleIdToken.Payload payload = idToken.getPayload();
-            log.debug("Verified token for user: {}", payload.getEmail());
-            return payload;
+            if (payload != null) {
+                log.debug("Verified token for user: {}", payload.getEmail());
+                return payload;
+            }else {
+                log.debug("Payload is null");
+                throw new SecurityException("Payload is null");
+            }
         }else {
             log.error("Invalid token");
             throw new SecurityException("Invalid token");
