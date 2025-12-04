@@ -4,20 +4,25 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import com.ruby.pro203_exam.google.config.SecurityConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.util.List;
 
 @Service
 @Slf4j
 public class AuthService {
 
-    @Value("${google.client-ids}")
-    private List<String> clientIdList;
+    private final SecurityConfig.GoogleClientConfig googleClientConfig;
+
+    public AuthService(SecurityConfig.GoogleClientConfig googleClientConfig) {
+        this.googleClientConfig = googleClientConfig;
+    }
 
     public GoogleIdToken.Payload verifyToken(String idTokenString)
         throws GeneralSecurityException, IOException {
@@ -26,7 +31,7 @@ public class AuthService {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(),
                 GsonFactory.getDefaultInstance())
-                        .setAudience(clientIdList)
+                        .setAudience(googleClientConfig.getClientIds())
                         .build();
         GoogleIdToken idToken = verifier.verify(idTokenString);
 
