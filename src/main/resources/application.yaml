@@ -1,3 +1,49 @@
 spring:
   application:
-    name: PRO203_exam
+    name: check-kid-api
+
+  # Auth Database Configuration
+  datasource:
+    auth:
+      jdbc-url: jdbc:postgresql://localhost:5433/checkkid_auth
+      username: checkkid_auth_user
+      password: devpassword1
+      driver-class-name: org.postgresql.Driver
+
+    # Application Database Configuration
+    app:
+      jdbc-url: jdbc:postgresql://localhost:5432/checkkid
+      username: checkkid_user
+      password: devpassword2
+      driver-class-name: org.postgresql.Driver
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Use Flyway for migrations
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  web:
+    error:
+      include-message: always
+      include-binding-errors: always
+
+# Server Configuration
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    com.ruby.pro203_exam: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
