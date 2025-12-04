@@ -3,6 +3,20 @@ spring:
     name: PRO203_exam
 
 # database config --> insert here
+# database solution in the meantime -->
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  h2:
+    console:
+      enabled: true
 
 google:
   client-ids:
