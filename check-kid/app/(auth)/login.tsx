@@ -1,7 +1,8 @@
-import { Stack, useLocalSearchParams, useRouter,Link } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter, Link } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView,Platform, Pressable, StyleSheet, Text, TextInput, View, } from "react-native";
+import { KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text,TextInput,View,} from "react-native";
 import { mockLogin } from "../../services/mockAuth";
+import { Colors } from "../../constants/colors"; 
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -17,10 +18,10 @@ export default function LoginScreen() {
       setErrorMsg("Fyll ut både e-post og passord!");
       return;
     }
-
+  
     setIsLoading(true);
     setErrorMsg(null);
-
+  
     try {
       const user = await mockLogin(
         email,
@@ -28,8 +29,17 @@ export default function LoginScreen() {
         role === "ansatt" || role === "forelder" ? (role as any) : undefined
       );
       console.log("Innlogget:", user);
-      // for nå sende den tilbake til tabs
-      router.replace("/(tabs)");
+  
+      if (user.role === "forelder") {
+        router.replace("/home");   
+      } 
+      else if (user.role === "ansatt") {
+        router.replace("/");       
+      } 
+      else {
+        router.replace("/");       
+      }
+  
     } catch (err: any) {
       console.log("Feil ved innlogging:", err);
       setErrorMsg(
@@ -41,6 +51,7 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   }
+  
 
   const typeRole =
     role === "ansatt"
@@ -62,6 +73,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="E-post"
+          placeholderTextColor={Colors.textMuted}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -71,6 +83,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Passord"
+          placeholderTextColor={Colors.textMuted}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -84,13 +97,13 @@ export default function LoginScreen() {
           disabled={isLoading}
         >
           <Text style={styles.buttonText}>
-            {isLoading ? "Logger inn." : "Logg inn"}
+            {isLoading ? "Logger inn..." : "Logg inn"}
           </Text>
         </Pressable>
 
         <View style={styles.footer}>
-          <Text>Har du ikke bruker?</Text>
-          <Link href="../personvern" style={styles.link}>
+          <Text style={styles.footerText}>Har du ikke bruker?</Text>
+          <Link href={{ pathname: "/personvern" }} style={styles.link}>
             Les personvern og registrer deg
           </Link>
         </View>
@@ -100,32 +113,50 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 16 },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 16,
+    backgroundColor: Colors.background, 
+  },
   card: {
-    backgroundColor: "white",
+    backgroundColor: "#FFFFFF",
     padding: 20,
     borderRadius: 12,
     gap: 12,
+    borderWidth: 1,
+    borderColor: Colors.primaryLightBlue,
   },
-  title: { fontSize: 22, fontWeight: "700", textAlign: "center" },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    color: Colors.text,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
     fontSize: 16,
+    borderColor: Colors.primaryLightBlue,
+    color: Colors.text,
   },
   error: {
-    color: "#b91c1c",
+    color: Colors.red,
     marginTop: 4,
   },
   button: {
     marginTop: 8,
-    backgroundColor: "#4ade80",
+    backgroundColor: Colors.primaryBlue,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",
   },
-  buttonText: { color: "black", fontWeight: "600", fontSize: 16 },
+  buttonText: {
+    color: "#111827",
+    fontWeight: "600",
+    fontSize: 16,
+  },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -133,7 +164,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
     flexWrap: "wrap",
   },
+  footerText: {
+    color: Colors.text,
+  },
   link: {
     textDecorationLine: "underline",
+    color: Colors.primaryBlue,
+    fontWeight: "500",
   },
 });

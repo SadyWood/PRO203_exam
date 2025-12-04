@@ -1,5 +1,6 @@
 import { Link } from "expo-router";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Colors } from "../constants/colors"; 
 
 export default function StartScreen() {
   return (
@@ -42,7 +43,7 @@ export default function StartScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: Colors.background, 
     alignItems: "center",
     paddingTop: 150,
   },
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
     width: "85%",
     paddingVertical: 24,
     borderRadius: 16,
-    backgroundColor: "#bfdbfe",
+    backgroundColor: Colors.primaryLightBlue, 
     alignItems: "center",
     marginBottom: 40,
   },
@@ -59,6 +60,7 @@ const styles = StyleSheet.create({
   logoText: {
     fontSize: 24,
     fontWeight: "800",
+    color: Colors.text, 
   },
 
   content: {
@@ -70,25 +72,27 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingVertical: 18,
     borderRadius: 16,
-    backgroundColor: "#bfdbfe",
+    backgroundColor: Colors.primaryLightBlue, 
     alignItems: "center",
   },
 
   bigButtonText: {
     fontSize: 18,
     fontWeight: "600",
+    color: Colors.text, 
   },
 
   registerBox: {
     marginTop: 10,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: "#fecaca",
+    backgroundColor: Colors.red, 
     alignItems: "center",
   },
 
   registerText: {
     fontSize: 14,
     fontWeight: "600",
+    color: Colors.text, 
   },
 });
