@@ -38,6 +38,8 @@ public class ParentService {
         return toResponseDto(parent);
     }
 
+    // ------------------------------------- HELPER METHODS ------------------------------------- //
+
     // Convert entity to DTO
     private ParentResponseDto toResponseDto(Parent parent) {
         return ParentResponseDto.builder()
