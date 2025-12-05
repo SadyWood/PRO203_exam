@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Auth Database
+  postgres-auth:
+    image: postgres:15-alpine
+    container_name: checkkid-auth-db
+    environment:
+      POSTGRES_DB: checkkid_auth
+      POSTGRES_USER: checkkid_auth_user
+      POSTGRES_PASSWORD: devpassword1
+    ports:
+      - "5433:5432"
+    volumes:
+      - auth-data:/var/lib/postgresql/data
+    networks:
+      - checkkid-network
+
+  # Application Database
+  postgres-app:
+    image: postgres:15-alpine
+    container_name: checkkid-app-db
+    environment:
+      POSTGRES_DB: checkkid
+      POSTGRES_USER: checkkid_user
+      POSTGRES_PASSWORD: devpassword2
+    ports:
+      - "5432:5432"
+    volumes:
+      - app-data:/var/lib/postgresql/data
+    networks:
+      - checkkid-network
+
+volumes:
+  auth-data:
+  app-data:
+
+networks:
+  checkkid-network:
+    driver: bridge
