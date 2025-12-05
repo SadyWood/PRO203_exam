@@ -27,14 +27,22 @@ public class ParentChildRelationship {
     @Column(name = "child_id", nullable = false)
     private UUID childId;
 
-    @Column(length = 50)
+    @Column(name = "relationship_type", length = 50)
     private String relationshipType; // "MOTHER", "FATHER", etc.
 
     @Column(nullable = false)
     @Builder.Default
     private Boolean canPickup = true;
 
+    @Column(name = "can_drop_off", nullable = false)
+    @Builder.Default
+    private Boolean canDropOff = true;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean isPrimaryContact = false;
+
+    @Column(name = "requires_id_verification", nullable = false)
+    @Builder.Default
+    private Boolean requiresIdVerification = false;
 }
