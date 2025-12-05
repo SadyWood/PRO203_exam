@@ -14,4 +14,5 @@ public class OpenIdCallbackDto {
     private String openidSubject; // Unique ID from OpenID provider
     private String email; // User email from provider
     private String name; // Display name from provider
+    private String profilePictureUrl; // Profile picture URL from provider
 }

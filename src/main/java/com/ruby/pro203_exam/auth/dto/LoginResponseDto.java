@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginResponseDto {
     private String token; // JWT token for subsequent requests
-    private String tokenType; // Always "Bearer"
+    @Builder.Default
+    private String tokenType = "Bearer"; // Always "Bearer"
     private UserResponseDto user; // User details
+    private boolean needsRegistration; // True if user needs to complete registration
 }

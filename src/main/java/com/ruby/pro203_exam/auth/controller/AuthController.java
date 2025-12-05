@@ -1,13 +1,19 @@
 package com.ruby.pro203_exam.auth.controller;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.ruby.pro203_exam.auth.dto.*;
 import com.ruby.pro203_exam.auth.service.AuthService;
+import com.ruby.pro203_exam.auth.service.GoogleAuthService;
+import com.ruby.pro203_exam.auth.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.UUID;
 
 // Rest Controller for authentication
@@ -18,28 +24,78 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final GoogleAuthService googleAuthService;
+    private final JwtService jwtService;
 
-    // Called by frontend after OpenID Authentication
-    @PostMapping("/openid-callback")
-    public ResponseEntity<UserResponseDto> handleOpenIdCallback(
-            @Valid @RequestBody OpenIdCallbackDto dto) {
+    // Called by frontend with Google ID token - verifies token and handles user login/registration
+    @PostMapping("/google")
+    public ResponseEntity<?> authenticateWithGoogle(@Valid @RequestBody GoogleAuthRequestDto request) {
+        try {
+            log.info("POST /api/auth/google - Authenticating with Google");
 
-        log.info("POST /api/auth/openid-callback - email: {}", dto.getEmail());
+            // Verify Google token
+            GoogleIdToken.Payload payload = googleAuthService.verifyToken(request.getIdToken());
+            GoogleAuthService.UserInfoFromGoogle userInfo = googleAuthService.extractUserInfo(payload);
 
-        UserResponseDto user = authService.handleOpenIdCallback(dto);
+            // Check email verification
+            if (!userInfo.isEmailVerified()) {
+                log.warn("User email not verified: {}", userInfo.getEmail());
+                return ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponseDto("EMAIL_NOT_VERIFIED", "Email is not verified"));
+            }
 
-        // Check if user needs to complete registration
-        if (user.getRole() == null || user.getProfileId() == null) {
-            log.info("User needs to complete registration: {}", user.getId());
-            // Frontend will show registration form
+            // Create OpenID callback DTO
+            OpenIdCallbackDto callbackDto = OpenIdCallbackDto.builder()
+                    .openidSubject(userInfo.getGoogleId())
+                    .email(userInfo.getEmail())
+                    .name(userInfo.getName())
+                    .profilePictureUrl(userInfo.getProfilePictureUrl())
+                    .build();
+
+            // Handle user login/registration
+            UserResponseDto user = authService.handleOpenIdCallback(callbackDto);
+
+            // Generate JWT token
+            String jwtToken = jwtService.generateToken(
+                    user.getEmail(),
+                    user.getRole() != null ? user.getRole().toString() : null,
+                    user.getId()
+            );
+
+            // Build response
+            LoginResponseDto response = LoginResponseDto.builder()
+                    .token(jwtToken)
+                    .user(user)
+                    .needsRegistration(user.getRole() == null || user.getProfileId() == null)
+                    .build();
+
+            log.info("User authenticated: {}", user.getEmail());
+            return ResponseEntity.ok(response);
+
+        } catch (GeneralSecurityException e) {
+            log.error("Token verification failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponseDto("INVALID_TOKEN", "Invalid or expired token"));
+
+        } catch (IOException e) {
+            log.error("Network error during token verification: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponseDto("NETWORK_ERROR", "Failed to verify token"));
+
+        } catch (Exception e) {
+            log.error("Unexpected error during authentication: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponseDto("INTERNAL_ERROR", "Unexpected error occurred"));
         }
-
-        return ResponseEntity.ok(user);
     }
 
     // Complete registration after first login - user selects role and provides additional information
     @PostMapping("/complete-registration/{userId}")
-    public ResponseEntity<UserResponseDto> completeRegistration(
+    public ResponseEntity<LoginResponseDto> completeRegistration(
             @PathVariable UUID userId,
             @Valid @RequestBody CompleteRegistrationDto dto) {
 
@@ -47,7 +103,20 @@ public class AuthController {
 
         UserResponseDto user = authService.completeRegistration(userId, dto);
 
-        return ResponseEntity.ok(user);
+        // Generate new JWT with updated role and profile
+        String jwtToken = jwtService.generateToken(
+                user.getEmail(),
+                user.getRole().toString(),
+                user.getId()
+        );
+
+        LoginResponseDto response = LoginResponseDto.builder()
+                .token(jwtToken)
+                .user(user)
+                .needsRegistration(false)
+                .build();
+
+        return ResponseEntity.ok(response);
     }
 
     // Get current user info when we add JWT authentication - TODO: Add @AuthenticationPrincipal when JWT implemented

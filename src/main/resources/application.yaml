@@ -47,3 +47,13 @@ logging:
     com.ruby.pro203_exam: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-here-should-be-at-least-256-bits-long-for-hs256
+  expiration: 86400000  # 24 hours in milliseconds
+
+# Google OAuth Configuration
+google:
+  client-ids:
+    - your-google-client-id-here.apps.googleusercontent.com

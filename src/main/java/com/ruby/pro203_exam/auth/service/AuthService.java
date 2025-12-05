@@ -99,6 +99,7 @@ public class AuthService {
                 .openIdSubject(dto.getOpenidSubject())
                 .email(dto.getEmail())
                 .name(dto.getName())
+                .profilePictureUrl(dto.getProfilePictureUrl())
                 .role(null) // Will be set during registration completion
                 .profileId(null) // Will be set when profile created
                 .build();

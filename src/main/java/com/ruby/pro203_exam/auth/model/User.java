@@ -22,7 +22,7 @@ public class User {
     private UUID id;
 
     // ----------------------------------------- OPENID Fields ----------------------------------------- //
-    //OpenID identifier
+    //OpenID identifier (Google ID)
     @Column(name = "openid_subject", unique = true, nullable = false, length = 255)
     private String openIdSubject;
 
@@ -31,6 +31,10 @@ public class User {
 
     @Column(name = "name", length = 255)
     private String name;
+
+    // URL to user's profile picture from Google
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
 
     // ----------------------------------------- System Fields ----------------------------------------- //
     // Role for authorization
