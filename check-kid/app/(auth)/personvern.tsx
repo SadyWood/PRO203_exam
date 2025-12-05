@@ -5,7 +5,6 @@ export default function PersonvernScreen() {
   const router = useRouter();
 
   function handleAccept() {
-    // Senere kan du lagre samtykke i AsyncStorage her
     router.replace("/register");
   }
 

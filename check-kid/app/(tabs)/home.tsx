@@ -5,7 +5,7 @@ import {
     ScrollView,
     TouchableOpacity,
 } from "react-native";
-
+import { useRouter } from "expo-router";
 import { Colors } from "../../constants/colors";
 
 const MOCK_PARENT = {
@@ -48,6 +48,7 @@ const MOCK_AGENDA = [
 ];
 
 export default function HomeScreen() {
+    const router = useRouter();
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.ScrollContent}>
@@ -82,7 +83,7 @@ export default function HomeScreen() {
                     />
                     <PrimaryButton
                     label="Meldinger"
-                    onPress={() => {}}
+                    onPress={() => router.push("/messages")} 
                     />
 
                     {/* Agenda for hvert barn */}
