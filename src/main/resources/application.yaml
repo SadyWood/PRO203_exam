@@ -5,14 +5,14 @@ spring:
   # Auth Database Configuration
   datasource:
     auth:
-      jdbc-url: jdbc:postgresql://localhost:5433/checkkid_auth
+      url: jdbc:postgresql://localhost:5433/checkkid_auth   # <-- endret
       username: checkkid_auth_user
       password: devpassword1
       driver-class-name: org.postgresql.Driver
 
     # Application Database Configuration
     app:
-      jdbc-url: jdbc:postgresql://localhost:5432/checkkid
+      url: jdbc:postgresql://localhost:5432/checkkid        # <-- endret
       username: checkkid_user
       password: devpassword2
       driver-class-name: org.postgresql.Driver
@@ -20,7 +20,7 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: validate  # Use Flyway for migrations
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
@@ -29,7 +29,7 @@ spring:
 
   # Flyway Configuration
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true
   web:
@@ -56,4 +56,4 @@ jwt:
 # Google OAuth Configuration
 google:
   client-ids:
-    - your-google-client-id-here.apps.googleusercontent.com
+    your-google-client-id-here.apps.googleusercontent.com

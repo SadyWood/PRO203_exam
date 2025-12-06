@@ -20,5 +20,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByOpenIdSubject(String openIdSubject);
 
     // Find by profile ID - to get auth info when you have parent/staff UUID
-    Optional<User> findByProfileID(UUID profileID);
+    Optional<User> findByProfileId(UUID profileId);
 }
