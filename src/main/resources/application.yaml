@@ -50,10 +50,12 @@ logging:
 
 # JWT Configuration
 jwt:
-  secret: your-secret-key-here-should-be-at-least-256-bits-long-for-hs256
-  expiration: 86400000  # 24 hours in milliseconds
+  secret: "secret-key-here-because-we-need-that-super-secret-jwt-key-because-we-are-all-about-security"
+  expiration: 43200000  # ms
 
 # Google OAuth Configuration
 google:
   client-ids:
-    - your-google-client-id-here.apps.googleusercontent.com
+      - "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com"
+      - "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com"
+      - "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com"   # <---- Not needed if frontend only tests on android/ios.
