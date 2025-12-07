@@ -30,7 +30,7 @@ public class ParentChildRelationship {
     @Column(name = "relationship_type", length = 50)
     private String relationshipType; // "MOTHER", "FATHER", etc.
 
-    @Column(nullable = false)
+    @Column(name = "can_pickup", nullable = false)
     @Builder.Default
     private Boolean canPickup = true;
 
@@ -38,7 +38,7 @@ public class ParentChildRelationship {
     @Builder.Default
     private Boolean canDropOff = true;
 
-    @Column(nullable = false)
+    @Column(name = "is_primary_contact", nullable = false)
     @Builder.Default
     private Boolean isPrimaryContact = false;
 

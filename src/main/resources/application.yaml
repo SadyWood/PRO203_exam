@@ -27,11 +27,9 @@ spring:
         format_sql: true
     show-sql: true
 
-  # Flyway Configuration
+  # Flyway Configuration - Disabled because we manage Flyway manually for multiple datasources
   flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: true
+    enabled: false
   web:
     error:
       include-message: always
@@ -47,6 +45,7 @@ logging:
     com.ruby.pro203_exam: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+    org.flywaydb: DEBUG
 
 # JWT Configuration
 jwt:
@@ -55,7 +54,4 @@ jwt:
 
 # Google OAuth Configuration
 google:
-  client-ids:
-      - "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com"
-      - "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com"
-      - "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com"   # <---- Not needed if frontend only tests on android/ios.
+  client-ids: "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com,231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com,231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com"

@@ -18,21 +18,24 @@ public class Staff {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
-    @Column(unique = true, length = 50)
+    @Column(name = "employee_id", unique = true, length = 50)
     private String employeeId;
 
-    @Column(length = 20)
+    @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "email", nullable = false, length = 255)
     private String email;
 
-    @Column(length = 100)
+    @Column(name = "position", length = 100)
     private String position;
+
+    @Column(name = "kindergarten_id")
+    private UUID kindergartenId;
 }
