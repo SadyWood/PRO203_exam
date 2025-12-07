@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 public class Kindergarten {
 
-    @id
+    @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
