@@ -18,7 +18,6 @@ import java.util.stream.StreamSupport;
 @Slf4j
 @Transactional(transactionManager = "appTransactionManager")
 public class StaffService {
-    private final StaffService staffService;
     private final StaffRepository staffRepository;
 
     public List<ResponseDto> getAllStaff() {
