@@ -1,6 +1,6 @@
-package com.ruby.pro203_exam.checkinout.repository;
+package com.ruby.pro203_exam.checker.repository;
 
-import com.ruby.pro203_exam.checkinout.model.CheckInOut;
+import com.ruby.pro203_exam.checker.model.CheckInOut;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CheckInOutRepository extends JpaRepository<CheckInOut, UUID> {
+public interface CheckerRepository extends JpaRepository<CheckInOut, UUID> {
 
     // Find active check-in - if no checkout time then child is currently in kindergarten
     Optional<CheckInOut> findByChildIdAndCheckOutTimeIsNull(UUID childId);

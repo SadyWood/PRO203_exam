@@ -126,7 +126,7 @@ public class DatabaseConfig {
                     "com.ruby.pro203_exam.staff.repository",
                     "com.ruby.pro203_exam.child.repository",
                     "com.ruby.pro203_exam.health.repository",
-                    "com.ruby.pro203_exam.checkinout.repository"
+                    "com.ruby.pro203_exam.checker.repository"
             },
             entityManagerFactoryRef = "appEntityManagerFactory",
             transactionManagerRef = "appTranscactionManager"

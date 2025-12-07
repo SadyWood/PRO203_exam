@@ -1,4 +1,4 @@
-package com.ruby.pro203_exam.checkinout.model;
+package com.ruby.pro203_exam.checker.model;
 
 public enum PersonType {
     Parent,
