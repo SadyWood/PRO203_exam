@@ -10,7 +10,7 @@ import {
   } from "react-native";
   import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../../../constants/colors";
+import { Colors } from "@/constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 

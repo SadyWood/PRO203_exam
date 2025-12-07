@@ -1,8 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter, Link } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text,TextInput,View,} from "react-native";
-import { mockLogin } from "../../services/mockAuth";
-import { Colors } from "../../constants/colors"; 
+import { mockLogin } from "@/services/mockAuth";
+import { Colors } from "@/constants/colors";
 
 export default function LoginScreen() {
   const router = useRouter();

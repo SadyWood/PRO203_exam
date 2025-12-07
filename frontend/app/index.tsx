@@ -1,6 +1,6 @@
 import { Link } from "expo-router";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Colors } from "../constants/colors"; 
+import { Colors } from "@/constants/colors";
 
 export default function StartScreen() {
   return (

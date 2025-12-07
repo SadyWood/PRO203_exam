@@ -6,7 +6,7 @@ import {
     TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Colors } from "../../constants/colors";
+import { Colors } from "@/constants/colors";
 
 const MOCK_PARENT = {
 name: "Ola",
