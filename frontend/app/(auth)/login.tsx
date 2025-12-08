@@ -1,8 +1,25 @@
+// app/(auth)/login.tsx
 import { Stack, useLocalSearchParams, useRouter, Link } from "expo-router";
-import { useState } from "react";
-import { KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text,TextInput,View,} from "react-native";
-import { mockLogin } from "@/services/mockAuth";
-import { Colors } from "@/constants/colors";
+import { useState, useEffect } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { mockLogin } from "../../services/mockAuth";
+import { Colors } from "../../constants/colors";
+
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+
+WebBrowser.maybeCompleteAuthSession();
+
+// Hvis backend kjører lokalt på 8080:
+const API_BASE_URL = "http://localhost:8080";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -12,16 +29,84 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    // Fyll inn dine faktiske IDer fra Google Cloud Console:
+    clientId: "DIN_WEB_CLIENT_ID",
+    iosClientId: "DIN_IOS_CLIENT_ID",
+    androidClientId: "DIN_ANDROID_CLIENT_ID",
+  });
+
+  useEffect(() => {
+    // Kalles når Google-login svarer
+    const handleGoogleResponse = async () => {
+      if (response?.type === "success") {
+        const idToken = response.params?.id_token;
+
+        if (!idToken) {
+          setErrorMsg("Fant ikke ID-token fra Google.");
+          setIsGoogleLoading(false);
+          return;
+        }
+
+        try {
+          setIsGoogleLoading(true);
+          setErrorMsg(null);
+
+          // Send ID-token til backend
+          const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            console.log("Google backend-feil:", data);
+            setErrorMsg(data?.message || "Google-innlogging feilet.");
+            return;
+          }
+
+          // Forventer LoginResponseDto { token, user, needsRegistration }
+          console.log("Google login OK:", data);
+
+          const user = data.user;
+          // Her kan du evt. lagre JWT i AsyncStorage senere
+
+          // Navigasjon basert på rolle (lik mockLogin)
+          if (user?.role === "PARENT" || user?.role === "forelder") {
+            router.replace("/home");
+          } else if (user?.role === "STAFF" || user?.role === "ansatt") {
+            router.replace("/");
+          } else {
+            router.replace("/");
+          }
+        } catch (err) {
+          console.log("Feil ved Google-innlogging:", err);
+          setErrorMsg("Noe gikk galt med Google-innloggingen.");
+        } finally {
+          setIsGoogleLoading(false);
+        }
+      } else if (response?.type === "error") {
+        console.log("Google response error:", response.error);
+        setErrorMsg("Google-innlogging avbrutt eller feilet.");
+        setIsGoogleLoading(false);
+      }
+    };
+
+    handleGoogleResponse();
+  }, [response, router]);
 
   async function handleLogin() {
     if (!email || !password) {
       setErrorMsg("Fyll ut både e-post og passord!");
       return;
     }
-  
+
     setIsLoading(true);
     setErrorMsg(null);
-  
+
     try {
       const user = await mockLogin(
         email,
@@ -29,17 +114,14 @@ export default function LoginScreen() {
         role === "ansatt" || role === "forelder" ? (role as any) : undefined
       );
       console.log("Innlogget:", user);
-  
+
       if (user.role === "forelder") {
-        router.replace("/home");   
-      } 
-      else if (user.role === "ansatt") {
-        router.replace("/");       
-      } 
-      else {
-        router.replace("/");       
+        router.replace("/home");
+      } else if (user.role === "ansatt") {
+        router.replace("/");
+      } else {
+        router.replace("/");
       }
-  
     } catch (err: any) {
       console.log("Feil ved innlogging:", err);
       setErrorMsg(
@@ -51,7 +133,16 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   }
-  
+
+  async function handleGoogleLogin() {
+    if (!request) {
+      setErrorMsg("Google-innlogging er ikke klar enda. Prøv igjen om litt.");
+      return;
+    }
+    setIsGoogleLoading(true);
+    setErrorMsg(null);
+    await promptAsync();
+  }
 
   const typeRole =
     role === "ansatt"
@@ -94,10 +185,24 @@ export default function LoginScreen() {
         <Pressable
           style={[styles.button, isLoading && { opacity: 0.7 }]}
           onPress={handleLogin}
-          disabled={isLoading}
+          disabled={isLoading || isGoogleLoading}
         >
           <Text style={styles.buttonText}>
             {isLoading ? "Logger inn..." : "Logg inn"}
+          </Text>
+        </Pressable>
+
+        {/* 🔵 Google-knapp under vanlig login */}
+        <Pressable
+          style={[
+            styles.googleButton,
+            (isGoogleLoading || !request) && { opacity: 0.7 },
+          ]}
+          onPress={handleGoogleLogin}
+          disabled={isGoogleLoading || !request}
+        >
+          <Text style={styles.googleButtonText}>
+            {isGoogleLoading ? "Logger inn med Google..." : "Logg inn med Google"}
           </Text>
         </Pressable>
 
@@ -117,7 +222,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 16,
-    backgroundColor: Colors.background, 
+    backgroundColor: Colors.background,
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -154,6 +259,18 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#111827",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  googleButton: {
+    marginTop: 8,
+    backgroundColor: "#1a73e8", // Google-blå-ish
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  googleButtonText: {
+    color: "#FFFFFF",
     fontWeight: "600",
     fontSize: 16,
   },
