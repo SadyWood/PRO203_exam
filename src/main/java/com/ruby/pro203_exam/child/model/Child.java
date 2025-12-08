@@ -19,24 +19,27 @@ public class Child {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
-    @Column(nullable = false)
+    @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
-    @Column(length = 50)
+    @Column(name = "group_name", length = 50)
     private String groupName;
 
     // Link to health data
     @Column(name = "health_data_id")
     private UUID healthDataId;
 
+    @Column(name = "kindergarten_id")
+    private UUID kindergartenId;
+
     // Is currently in kindergarten?
-    @Column(nullable = false)
+    @Column(name = "checked_in", nullable = false)
     @Builder.Default
     private Boolean checkedIn = false;
 }

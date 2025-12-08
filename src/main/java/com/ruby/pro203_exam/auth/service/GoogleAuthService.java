@@ -16,7 +16,7 @@ import java.util.List;
 @Slf4j
 public class GoogleAuthService {
 
-    @Value("${google.client-ids}")
+    @Value("#{'${google.client-ids}'.split(',')}")
     private List<String> clientIds;
 
     public GoogleIdToken.Payload verifyToken(String idTokenString)

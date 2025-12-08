@@ -32,7 +32,7 @@ public class CheckInOut {
     private UUID droppedOffBy;
 
     // Type of person dropped of the child // Parent, other
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     @Column(name = "dropped_off_by_type", length = 20)
     private PersonType droppedOffByType;
 
@@ -53,7 +53,7 @@ public class CheckInOut {
     private UUID pickedUpBy;
 
     // Type of person who picked up
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     @Column(name = "picked_up_by_type", length = 20)
     private PersonType pickedUpByType;
 

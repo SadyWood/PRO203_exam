@@ -21,18 +21,18 @@ public class HealthData {
     @Column(name = "child_id", nullable = false, unique = true)
     private UUID childId;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "medical_conditions", columnDefinition = "TEXT")
     private String medicalConditions;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "allergies", columnDefinition = "TEXT")
     private String allergies;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "medications", columnDefinition = "TEXT")
     private String medications;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "emergency_contact", columnDefinition = "TEXT")
     private String emergencyContact;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "dietary_restrictions", columnDefinition = "TEXT")
     private String dietaryRestrictions;
 }
