@@ -33,9 +33,9 @@ export default function LoginScreen() {
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     // Fyll inn dine faktiske IDer fra Google Cloud Console:
-    clientId: "DIN_WEB_CLIENT_ID",
-    iosClientId: "DIN_IOS_CLIENT_ID",
-    androidClientId: "DIN_ANDROID_CLIENT_ID",
+    clientId: "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com",
+    iosClientId: "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com",
+    androidClientId: "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com",
   });
 
   useEffect(() => {

@@ -10,7 +10,7 @@ import { View, Text,StyleSheet,Image,TouchableOpacity, ScrollView, } from "react
       <ScrollView style={styles.container}>
         <View style={styles.profileCard}>
           <Image
-            source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+            source={{ uri: "https://randomuser.me/api/portraits/boy/32.jpg" }}
             style={styles.avatar}
           />
           <View style={{ flex: 1 }}>
