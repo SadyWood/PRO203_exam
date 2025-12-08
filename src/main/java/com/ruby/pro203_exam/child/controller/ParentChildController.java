@@ -40,7 +40,7 @@ public class ParentChildController {
 
     @GetMapping("/{Id}")
     public ResponseEntity<ParentChildDto> getRelatedById(@PathVariable UUID id) {
-        log.info("Get specific relationship status");
+        log.info("Get specific relationship status.");
         return ResponseEntity.ok(parentChildService.getRelationshipById(id));
 
     }
