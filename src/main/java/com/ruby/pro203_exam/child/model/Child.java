@@ -31,6 +31,9 @@ public class Child {
     @Column(name = "group_name", length = 50)
     private String groupName;
 
+    @Column(name = "group_id")
+    private UUID groupId;
+
     // Link to health data
     @Column(name = "health_data_id")
     private UUID healthDataId;
