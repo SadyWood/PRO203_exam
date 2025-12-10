@@ -38,31 +38,6 @@ public class KindergartenService {
         return toResponseDto(kindergarten);
     }
 
-    // Create new kindergarten - STAFF ONLY
-    @Transactional(transactionManager = "appTransactionManager")
-    public KindergartenResponseDto createKindergarten(CreateKindergartenDto dto) {
-        log.info("Creating Kindergarten: {}", dto.getName());
-
-        // Check if name exists
-        if (kindergartenRepository.existsByName(dto.getName())) {
-            throw new RuntimeException("Kindergarten with name " + dto.getName() + " already exists");
-        }
-
-        // Build entity
-        Kindergarten kindergarten = Kindergarten.builder()
-                .name(dto.getName())
-                .address(dto.getAddress())
-                .phoneNumber(dto.getPhoneNumber())
-                .email(dto.getEmail())
-                .build();
-
-        // Save to db
-        Kindergarten saved = kindergartenRepository.save(kindergarten);
-        log.info("Created kindergarten with id: {}", saved.getId());
-
-        return toResponseDto(saved);
-    }
-
     // Update kindergarten - STAFF ONLY
     @Transactional(transactionManager = "appTransactionManager")
     public KindergartenResponseDto updateKindergarten(UUID id, UpdateKindergartenDto dto) {

@@ -35,14 +35,6 @@ public class KindergartenController {
         return ResponseEntity.ok(kindergartenService.getKindergartenById(id));
     }
 
-    // Create kindergarten
-    @PostMapping
-    public ResponseEntity<KindergartenResponseDto> createKindergarten(
-            @Valid @RequestBody CreateKindergartenDto dto) {
-        KindergartenResponseDto created = kindergartenService.createKindergarten(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
     // Update kindergarten
     @PutMapping("/{id}")
     public ResponseEntity<KindergartenResponseDto> updateKindergarten(
