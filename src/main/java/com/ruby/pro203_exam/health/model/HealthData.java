@@ -3,6 +3,7 @@ package com.ruby.pro203_exam.health.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -35,4 +36,10 @@ public class HealthData {
 
     @Column(name = "dietary_restrictions", columnDefinition = "TEXT")
     private String dietaryRestrictions;
+
+    @Column(name = "last_edited_by")
+    private UUID lastEditedBy;
+
+    @Column(name = "last_edited_at")
+    private LocalDateTime lastEditedAt;
 }
