@@ -32,4 +32,10 @@ public class CompleteRegistrationDto {
     private String address; // For parents
     private String employeeId; // For staff
     private String position; // For staff
+
+    // Only required if registering as a boss
+    private String kindergartenName;
+    private String kindergartenAddress;
+    private String kindergartenPhone;
+    private String kindergartenEmail;
 }

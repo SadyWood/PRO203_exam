@@ -119,7 +119,8 @@ public class DatabaseConfig {
                 "com.ruby.pro203_exam.child.model",
                 "com.ruby.pro203_exam.health.model",
                 "com.ruby.pro203_exam.checker.model",
-                "com.ruby.pro203_exam.kindergarten.model"
+                "com.ruby.pro203_exam.kindergarten.model",
+                "com.ruby.pro203_exam.group.model"
         );
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         em.setPersistenceUnitName("app");
@@ -148,7 +149,8 @@ public class DatabaseConfig {
                     "com.ruby.pro203_exam.child.repository",
                     "com.ruby.pro203_exam.health.repository",
                     "com.ruby.pro203_exam.checker.repository",
-                    "com.ruby.pro203_exam.kindergarten.repository"
+                    "com.ruby.pro203_exam.kindergarten.repository",
+                    "com.ruby.pro203_exam.group.repository"
             },
             entityManagerFactoryRef = "appEntityManagerFactory",
             transactionManagerRef = "appTransactionManager"

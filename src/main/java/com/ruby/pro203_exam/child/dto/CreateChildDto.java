@@ -36,4 +36,6 @@ public class CreateChildDto {
 
     @NotNull(message = "Kindergarten is required")
     private UUID kindergartenId; // Which kindergarten child attends
+
+    private UUID groupId;
 }

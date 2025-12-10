@@ -6,6 +6,8 @@ import com.ruby.pro203_exam.auth.dto.UserResponseDto;
 import com.ruby.pro203_exam.auth.model.User;
 import com.ruby.pro203_exam.auth.model.UserRole;
 import com.ruby.pro203_exam.auth.repository.UserRepository;
+import com.ruby.pro203_exam.kindergarten.model.Kindergarten;
+import com.ruby.pro203_exam.kindergarten.repository.KindergartenRepository;
 import com.ruby.pro203_exam.parent.model.Parent;
 import com.ruby.pro203_exam.parent.repository.ParentRepository;
 import com.ruby.pro203_exam.staff.model.Staff;
@@ -25,6 +27,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final ParentRepository parentRepository;
     private final StaffRepository staffRepository;
+    private final KindergartenRepository kindergartenRepository;
     // TODO: Add JwtService when we implement JWT
 
     // Handle openId Callback - called after user authenticates with OpenID provider
@@ -61,6 +64,8 @@ public class AuthService {
             profileId = createParentProfile(user, dto);
         } else if (dto.getRole() == UserRole.STAFF) {
             profileId = createStaffProfile(user, dto);
+        } else if (dto.getRole() == UserRole.BOSS) {
+            profileId = createBossProfile(user, dto);
         } else {
             throw new RuntimeException("Invalid role for registration");
         }
@@ -142,6 +147,45 @@ public class AuthService {
         return saved.getId();
     }
 
+    // Create boss profile - creates kindergarten and staff profile
+    private UUID createBossProfile(User user, CompleteRegistrationDto dto) {
+        log.info("Creating boss profile for user: {}", user.getId());
+
+        // Validate kindergarten fields
+        if (dto.getKindergartenName() == null || dto.getKindergartenName().isBlank()) {
+            throw new RuntimeException("Kindergarten name is required for BOSS registration");
+        }
+
+        // Create kindergarten first
+        Kindergarten kindergarten = Kindergarten.builder()
+                .name(dto.getKindergartenName())
+                .address(dto.getKindergartenAddress())
+                .phoneNumber(dto.getKindergartenPhone())
+                .email(dto.getKindergartenEmail())
+                .build();
+
+        Kindergarten savedKindergarten = kindergartenRepository.save(kindergarten);
+        log.info("Created kindergarten: {}", savedKindergarten.getId());
+
+        // Create staff profile linked to kindergarten
+        Staff staff = Staff.builder()
+                .firstName(dto.getFirstName())
+                .lastName(dto.getLastName())
+                .email(user.getEmail())
+                .phoneNumber(dto.getPhoneNumber())
+                .employeeId(dto.getEmployeeId())
+                .position("Owner")
+                .isAdmin(true)
+                .kindergartenId(savedKindergarten.getId())
+                .build();
+
+        Staff savedStaff = staffRepository.save(staff);
+        log.info("Created boss staff profile: {}", savedStaff.getId());
+
+        return savedStaff.getId();
+    }
+
+    // ------------------------------------- HELPER METHODS ------------------------------------- //
     // Convert user entity to DTO
     private UserResponseDto toResponseDto(User user) {
         return UserResponseDto.builder()

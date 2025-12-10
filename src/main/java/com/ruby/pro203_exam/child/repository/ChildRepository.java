@@ -28,4 +28,10 @@ public interface ChildRepository extends JpaRepository<Child, UUID> {
 
     // Find children by kindergarten
     List<Child> findByKindergartenId(UUID kindergartenId);
+
+    // FInd all children who belong to a given group
+    List<Child> findByGroupIdIn(List<UUID> groupId); //TODO: Implement in ChildService
+
+    // Count how many children are in a specific group
+    long countByGroupId(UUID id); // TODO: Implement in ChildService
 }

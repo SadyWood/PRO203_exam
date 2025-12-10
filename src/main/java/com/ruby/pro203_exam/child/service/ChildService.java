@@ -79,6 +79,7 @@ public class ChildService {
                 .lastName(dto.getLastName())
                 .birthDate(dto.getBirthDate())
                 .groupName(dto.getGroupName())
+                .groupId(dto.getGroupId())
                 .kindergartenId(dto.getKindergartenId())
                 .checkedIn(false)
                 .build();
@@ -124,6 +125,9 @@ public class ChildService {
         if (dto.getGroupName() != null) {
             child.setGroupName(dto.getGroupName());
         }
+        if (dto.getGroupId() != null) {
+            child.setGroupId(dto.getGroupId());
+        }
         if (dto.getKindergartenId() != null) {
             // Verify new kindergarten exists
             if (!kindergartenRepository.existsById(dto.getKindergartenId())) {
@@ -156,7 +160,6 @@ public class ChildService {
         log.info("Deleted child: {}", id);
     }
 
-
     // ------------------------------------- HELPER METHODS ------------------------------------- //
     // Entity -> DTO
     private ChildResponseDto toResponseDto(Child child) {
@@ -174,6 +177,7 @@ public class ChildService {
                 .lastName(child.getLastName())
                 .birthDate(child.getBirthDate())
                 .groupName(child.getGroupName())
+                .groupId(child.getGroupId())
                 .kindergartenId(child.getKindergartenId())
                 .kindergartenName(kindergartenName)
                 .checkedIn(child.getCheckedIn())

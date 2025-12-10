@@ -19,6 +19,7 @@ public class ChildResponseDto {
     private String lastName;
     private LocalDate birthDate;
     private String groupName;
+    private UUID groupId;
     private UUID kindergartenId;
     private String kindergartenName; // From kindergarten lookup
     private Boolean checkedIn;

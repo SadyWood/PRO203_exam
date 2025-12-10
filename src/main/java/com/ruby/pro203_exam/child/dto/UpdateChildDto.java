@@ -28,5 +28,7 @@ public class UpdateChildDto {
     @Size(max = 50)
     private String groupName;
 
+    private UUID groupId;
+
     private UUID kindergartenId;
 }
