@@ -1,6 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {Platform} from "react-native";
 
-const API_BASE_URL = "http://192.168.10.132:8080";
+const API_BASE_URL = Platform.OS === "android"
+? "http://10.0.2.2:8080"
+    : "http://localhost:8080";
 
 export interface UserResponseDto {
   id: string;
@@ -31,7 +34,7 @@ function normalizeLoginResponse(json: any): LoginResponseDto {
 }
 
 export async function loginWithGoogle(idToken: string): Promise<LoginResponseDto> {
-  const res = await fetch(`${API_BASE_URL}/auth/google`, {
+  const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -68,7 +71,7 @@ export async function fetchCurrentUser(): Promise<UserResponseDto | null> {
   const token = await AsyncStorage.getItem("authToken");
   if (!token) return null;
 
-  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

@@ -7,7 +7,6 @@ import com.ruby.pro203_exam.kindergarten.model.Kindergarten;
 import com.ruby.pro203_exam.kindergarten.repository.KindergartenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 public class KindergartenService {
 
     private final KindergartenRepository kindergartenRepository;
-    private final DataSourceTransactionManager transactionManager;
 
     // Get all kindergartens - for parents when selecting
     public List<KindergartenResponseDto> getAllKindergartens() {

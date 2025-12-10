@@ -4,19 +4,22 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
+@Setter
 @Service
 @Slf4j
+@ConfigurationProperties(prefix = "google")
 public class GoogleAuthService {
 
-    @Value("#{'${google.client-ids}'.split(',')}")
     private List<String> clientIds;
 
     public GoogleIdToken.Payload verifyToken(String idTokenString)

@@ -118,7 +118,7 @@ public class DatabaseConfig {
                 "com.ruby.pro203_exam.staff.model",
                 "com.ruby.pro203_exam.child.model",
                 "com.ruby.pro203_exam.health.model",
-                "com.ruby.pro203_exam.checkinout.model",
+                "com.ruby.pro203_exam.checker.model",
                 "com.ruby.pro203_exam.kindergarten.model"
         );
         em.setJpaVendorAdapter(new HibernateJpaVendorAdapter());

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { mockLogin } from "../../services/mockAuth";
 import { Colors } from "../../constants/colors";
+import {loginWithGoogle} from "@/services/authApi";
 
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
@@ -19,7 +20,9 @@ import * as Google from "expo-auth-session/providers/google";
 WebBrowser.maybeCompleteAuthSession();
 
 // Hvis backend kjører lokalt på 8080:
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = Platform.OS === "android"
+? "http://10.0.2.2:8080"
+    : "http://localhost:8080";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -54,37 +57,24 @@ export default function LoginScreen() {
           setIsGoogleLoading(true);
           setErrorMsg(null);
 
-          // Send ID-token til backend
-          const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          });
-
-          const data = await res.json();
-          if (!res.ok) {
-            console.log("Google backend-feil:", data);
-            setErrorMsg(data?.message || "Google-innlogging feilet.");
-            return;
-          }
-
-          // Forventer LoginResponseDto { token, user, needsRegistration }
-          console.log("Google login OK:", data);
-
-          const user = data.user;
+          const loginResponse = await loginWithGoogle(idToken);
+          console.log("Google login OK:", loginResponse);
+          const user = loginResponse.user;
           // Her kan du evt. lagre JWT i AsyncStorage senere
 
           // Navigasjon basert på rolle (lik mockLogin)
-          if (user?.role === "PARENT" || user?.role === "forelder") {
-            router.replace("/home");
-          } else if (user?.role === "STAFF" || user?.role === "ansatt") {
+          if (user?.role === "PARENT") {
+            setTimeout(() => {
+              router.replace("/home");
+            }, 100);
+          } else if (user?.role === "STAFF") {
             router.replace("/");
           } else {
             router.replace("/");
           }
-        } catch (err) {
+        } catch (err: any) {
           console.log("Feil ved Google-innlogging:", err);
-          setErrorMsg("Noe gikk galt med Google-innloggingen.");
+          setErrorMsg(err.message);
         } finally {
           setIsGoogleLoading(false);
         }
