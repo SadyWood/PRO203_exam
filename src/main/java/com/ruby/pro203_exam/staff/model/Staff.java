@@ -36,6 +36,10 @@ public class Staff {
     @Column(name = "position", length = 100)
     private String position;
 
+    @Column(name = "is_admin", nullable = false)
+    @Builder.Default
+    private Boolean isAdmin = false;
+
     @Column(name = "kindergarten_id")
     private UUID kindergartenId;
 }
