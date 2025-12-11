@@ -66,22 +66,29 @@ export async function loginWithGoogle(idToken: string): Promise<LoginResponseDto
   return loginResponse;
 }
 
-// Hjelper for senere: hent nåværende bruker fra backend (f.eks. /auth/me)
-export async function fetchCurrentUser(): Promise<UserResponseDto | null> {
+export async function fetchCurrentUser(endpoint: string, options: RequestInit = {}): Promise<Response> {
+
   const token = await AsyncStorage.getItem("authToken");
-  if (!token) return null;
 
-  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    console.log("fetchCurrentUser status:", res.status);
-    return null;
+  if (!token) {
+    throw new Error("no token");
   }
 
-  const json = await res.json();
-  return json as UserResponseDto;
+  const headers = {
+    ...options.headers,
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (res.status === 401) {
+    await AsyncStorage.removeItem("authToken");
+    await AsyncStorage.removeItem("currentUser");
+  }
+
+  return res;
 }

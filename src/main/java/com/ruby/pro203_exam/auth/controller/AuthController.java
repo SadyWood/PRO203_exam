@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -119,14 +121,18 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // Get current user info when we add JWT authentication - TODO: Add @AuthenticationPrincipal when JWT implemented
     @GetMapping("/me")
     public ResponseEntity<UserResponseDto> getCurrentUser() {
-        // TODO: Get userId from JWT token
         log.info("GET /api/auth/me");
 
-        // Returns placeholder for now
-        throw new RuntimeException("Not implemented - add JWT authentication first");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if(authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String email = authentication.getName();
+        UserResponseDto user = authService.getUserByEmail(email);
+        return ResponseEntity.ok(user);
     }
 
     // Get user by ID

@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {Stack, useRouter, useSegments} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
