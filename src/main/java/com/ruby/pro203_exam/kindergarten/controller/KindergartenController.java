@@ -2,14 +2,12 @@ package com.ruby.pro203_exam.kindergarten.controller;
 
 // Rest Controller for Kindergarten endpoints
 
-import com.ruby.pro203_exam.kindergarten.dto.CreateKindergartenDto;
 import com.ruby.pro203_exam.kindergarten.dto.KindergartenResponseDto;
 import com.ruby.pro203_exam.kindergarten.dto.UpdateKindergartenDto;
 import com.ruby.pro203_exam.kindergarten.service.KindergartenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

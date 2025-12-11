@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// DTO for updating a kindergarten - all fields are optional only updates whats changed
+// DTO for updating a kindergarten - all fields are optional only updates what's changed
 @Data
 @Builder
 @NoArgsConstructor

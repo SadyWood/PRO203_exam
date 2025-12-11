@@ -5,7 +5,6 @@ import com.ruby.pro203_exam.checker.dto.CheckOutDto;
 import com.ruby.pro203_exam.checker.dto.CheckerResponseDto;
 import com.ruby.pro203_exam.checker.model.CheckInOut;
 import com.ruby.pro203_exam.checker.repository.CheckerRepository;
-import com.ruby.pro203_exam.parent.repository.ParentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,5 +1,6 @@
 package com.ruby.pro203_exam.parent.service;
 
+import com.ruby.pro203_exam.auth.model.User;
 import com.ruby.pro203_exam.auth.repository.UserRepository;
 import com.ruby.pro203_exam.child.model.Child;
 import com.ruby.pro203_exam.child.model.ParentChildRelationship;
@@ -59,7 +60,7 @@ public class ParentService {
 
         // Get profile picture from User entity
         String profilePictureUrl = userRepository.findByProfileId(parentId)
-                .map(user -> user.getProfilePictureUrl())
+                .map(User::getProfilePictureUrl)
                 .orElse(null);
 
         // Get all children

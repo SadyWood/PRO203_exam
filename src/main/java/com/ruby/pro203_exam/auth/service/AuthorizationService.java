@@ -10,7 +10,6 @@ import com.ruby.pro203_exam.staff.model.Staff;
 import com.ruby.pro203_exam.staff.repository.StaffRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 

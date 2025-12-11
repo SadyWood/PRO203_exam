@@ -1,6 +1,5 @@
 package com.ruby.pro203_exam.kindergarten.service;
 
-import com.ruby.pro203_exam.kindergarten.dto.CreateKindergartenDto;
 import com.ruby.pro203_exam.kindergarten.dto.KindergartenResponseDto;
 import com.ruby.pro203_exam.kindergarten.dto.UpdateKindergartenDto;
 import com.ruby.pro203_exam.kindergarten.model.Kindergarten;
