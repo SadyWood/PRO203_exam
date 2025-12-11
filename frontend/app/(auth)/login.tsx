@@ -13,6 +13,7 @@ import {
 import { mockLogin } from "@/services/mockAuth";
 import { Colors } from "@/constants/colors";
 import {loginWithGoogle} from "@/services/authApi";
+import { authRefresh } from "../_layout";
 
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
@@ -34,6 +35,7 @@ export default function LoginScreen() {
     clientId: "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com",
     iosClientId: "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com",
     androidClientId: "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com",
+    selectAccount: true,
   });
 
   useEffect(() => {
@@ -56,12 +58,11 @@ export default function LoginScreen() {
           console.log("Google login OK:", loginResponse);
           const user = loginResponse.user;
           // Her kan du evt. lagre JWT i AsyncStorage senere
+          await authRefresh();
 
           // Navigasjon basert på rolle (lik mockLogin)
           if (user?.role === "PARENT") {
-            setTimeout(() => {
               router.replace("/home");
-            }, 100);
           } else if (user?.role === "STAFF") {
             router.replace("/");
           } else {
@@ -99,6 +100,8 @@ export default function LoginScreen() {
         role === "ansatt" || role === "forelder" ? (role as any) : undefined
       );
       console.log("Innlogget:", user);
+
+      await authRefresh();
 
       if (user.role === "forelder") {
         router.replace("/home");

@@ -1,15 +1,16 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Stack, useRouter, useSegments} from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+let globalAuthRefresh:(() => Promise<void>) | null = null;
+
+export function authRefresh(){
+    return globalAuthRefresh?.();
+}
 export default function RootLayout() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const segments = useSegments();
     const router = useRouter();
-
-    useEffect(() => {
-        void checkAuth();
-    }, []);
 
     async function checkAuth(){
         try{
@@ -22,12 +23,23 @@ export default function RootLayout() {
     }
 
     useEffect(() => {
+        globalAuthRefresh = checkAuth;
+        return () => {
+            globalAuthRefresh = null;
+        };
+    }, [checkAuth]);
+
+    useEffect(() => {
+        void checkAuth();
+    }, [checkAuth]);
+
+    useEffect(() => {
         if (isAuthenticated === null) return;
         const inAuthGroup = segments[0] === "(auth)";
 
         console.log("Auth state:", isAuthenticated, "Segments:", segments);
 
-        if(!isAuthenticated && !inAuthGroup){
+        if(!isAuthenticated && !inAuthGroup && segments[0] !== undefined){
             router.replace("/");
         }else if (isAuthenticated && inAuthGroup){
             router.replace("/home");

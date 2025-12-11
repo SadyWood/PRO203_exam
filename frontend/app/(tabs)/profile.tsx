@@ -2,9 +2,22 @@ import { View, Text,StyleSheet,Image,TouchableOpacity, ScrollView, } from "react
   import { Colors } from "@/constants/colors";
   import { Ionicons } from "@expo/vector-icons";
   import { useRouter } from "expo-router";
+  import AsyncStorage from "@react-native-async-storage/async-storage";
   
   export default function ProfileScreen() {
     const router = useRouter();
+
+    async function handleLogout(){
+      try {
+        await AsyncStorage.removeItem("authToken");
+        await AsyncStorage.removeItem("currentUser");
+
+        console.log("Logged out");
+        router.replace("/");
+      }catch (error){
+        console.log(error);
+      }
+    }
   
     return (
       <ScrollView style={styles.container}>
@@ -82,7 +95,7 @@ import { View, Text,StyleSheet,Image,TouchableOpacity, ScrollView, } from "react
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={() => router.replace("/")}
+            onPress={handleLogout}
           >
             <Text style={styles.logoutText}>Logg ut</Text>
           </TouchableOpacity>
