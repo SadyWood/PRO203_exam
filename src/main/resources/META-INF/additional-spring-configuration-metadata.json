@@ -1,0 +1,48 @@
+{
+  "properties": [
+    {
+      "name": "spring.datasource.auth.jdbc-url",
+      "type": "java.lang.String",
+      "description": "JDBC URL for the authentication db."
+  },
+    {
+      "name": "spring.datasource.auth.username",
+      "type": "java.lang.String",
+      "description": "Username for the authentication db."
+    },
+    {
+      "name": "spring.datasource.auth.password",
+      "type": "java.lang.String",
+      "description": "Password for the authentication db."
+    },
+    {
+      "name": "spring.datasource.auth.driver-class-name",
+      "type": "java.lang.String",
+      "description": "JDBC driver class name for authentication db."
+    },
+    {
+      "name": "spring.datasource.app.jdbc-url",
+      "type": "java.lang.String",
+      "description": "JDBC URL for the app db."
+    },
+    {
+      "name": "spring.datasource.app.username",
+      "type": "java.lang.String",
+      "description": "Username for the app db."
+    },
+    {
+      "name": "spring.datasource.app.password",
+      "type": "java.lang.String",
+      "description": "Password for the app db."
+    },
+    {
+      "name": "spring.datasource.app.driver-class-name",
+      "type": "java.lang.String",
+      "description": "JDBC driver class name for app db."
+    },
+    {
+      "name": "google.client-ids",
+      "type": "java.util.List<java.lang.String>",
+      "description": "List of Google client ids on authentication."
+    }
+  ] }
