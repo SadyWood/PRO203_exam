@@ -1,25 +1,65 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Switch } from "react-native";
+import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Switch, ActivityIndicator} from "react-native";
 import { Colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import {useLocalSearchParams, useRouter} from "expo-router";
+import {useEffect, useState} from "react";
+import {getHealthData} from "@/services/healthApi";
+import {HealthDataInterface} from "@/models/health";
+import {fetchCurrentUser} from "@/services/authApi";
 
-export default function StianProfile() {
+export default function ChildProfile() {
   const router = useRouter();
 
+  const {id} = useLocalSearchParams<{id: string}>();
+  const [childData, setChildData] = useState<any>(null);
+  const [healthData, setHealthData] = useState<HealthDataInterface | null>(null);
   const [sharePhotos, setSharePhotos] = useState(true);
   const [tripPermission, setTripPermission] = useState(true);
   const [showNamePublic, setShowNamePublic] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchHealthData(){
+      try {
+
+        setLoading(true);
+        const childRes = await fetchCurrentUser(`/api/children/${id}`);
+
+        if(childRes.ok){
+          const child = await childRes.json();
+          setChildData(child);
+        }
+
+        const health = await getHealthData(id)
+        setHealthData(health);
+
+      }catch (error){
+        console.error(error);
+      }finally {
+        setLoading(false);
+      }
+    }
+
+    if(id){
+      fetchHealthData();
+    }
+
+  }, [id]);
+
+  const allergiesList = healthData?.allergies
+    ? healthData.allergies.split(",").map(a => a.trim()).filter(Boolean)
+      : [];
+
 
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={{ paddingBottom: 24 }}
     >
-      
       <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/profile")}>
         <Ionicons name="chevron-back" size={26} color={Colors.text} />
       </TouchableOpacity>
+
 
       <View style={styles.headerCard}>
         <Image
@@ -28,18 +68,24 @@ export default function StianProfile() {
         />
 
         <View style={styles.headerTextBox}>
-          <Text style={styles.childName}>Stian Hansen</Text>
+          <Text style={styles.childName}>
+            {childData?.firstName} {childData?.lastName}
+          </Text>
 
           <View style={styles.dateChip}>
           <Text style={{ fontSize: 14, marginRight: 4 }}>🎂</Text>
-          <Text style={styles.dateText}>20.08.2021</Text>
+          <Text style={styles.dateText}>
+            {childData?.birthDate
+            ? new Date(childData.birthDate).toLocaleDateString("no-NO")
+            : "Ikke oppgitt"}
+          </Text>
         </View>
 
         </View>
       </View>
 
       <View style={styles.departmentBar}>
-        <Text style={styles.departmentText}>Avdeling: Bjørn</Text>
+        <Text style={styles.departmentText}>Avdeling: {childData.groupName}</Text>
       </View>
 
       <Text style={styles.sectionTitle}>Tillatelser</Text>
@@ -59,27 +105,66 @@ export default function StianProfile() {
         <Switch value={showNamePublic} onValueChange={setShowNamePublic} />
       </View>
 
-
       <Text style={styles.sectionTitle}>Helsehensyn</Text>
+
+      {loading ? (
+          <ActivityIndicator size="large" color={Colors.primaryBlue}/>
+      ): healthData ? (
 
       <View style={styles.healthCard}>
 
-        <View style={styles.healthGroup}>
-          <Text style={styles.healthHeaderText}>Matallergier:</Text>
-          <View style={styles.healthRow}>
-            <Text style={styles.healthRowText}>Ingen</Text>
-          </View>
-        </View>
+        {allergiesList.length > 0 && (
+            <View style={styles.healthGroup}>
+              <Text style={styles.healthHeaderText}>Matallergier:</Text>
+              {allergiesList.map((allergy, index) => (
+                  <View style={styles.healthRow}>
+                    <Text style={styles.healthRowText}>{allergy}</Text>
+                  </View>
+              ))}
+            </View>
+        )}
 
+        {healthData.medicalConditions && (
+            <View style={styles.healthGroup}>
+              <Text style={styles.healthHeaderText}>Medisinske tilstander:</Text>
+                  <View style={styles.healthRow}>
+                    <Text style={styles.healthRowText}>{healthData.medicalConditions}</Text>
+                  </View>
+            </View>
+        )}
 
-        <View style={styles.healthGroup}>
-          <Text style={styles.healthHeaderText}>Annet:</Text>
-          <View style={styles.healthRow}>
-            <Text style={styles.healthRowText}>Dårlig syn</Text>
-          </View>
-        </View>
+        {healthData.medications && (
+            <View style={styles.healthGroup}>
+              <Text style={styles.healthHeaderText}>Medisiner:</Text>
+                  <View style={styles.healthRow}>
+                    <Text style={styles.healthRowText}>{healthData.medications}</Text>
+                  </View>
+            </View>
+        )}
+
+        {healthData.dietaryRestrictions && (
+            <View style={styles.healthGroup}>
+              <Text style={styles.healthHeaderText}>Restriksjoner:</Text>
+                  <View style={styles.healthRow}>
+                    <Text style={styles.healthRowText}>{healthData.dietaryRestrictions}</Text>
+                  </View>
+            </View>
+        )}
+
+        {healthData.emergencyContact && (
+            <View style={styles.healthGroup}>
+              <Text style={styles.healthHeaderText}>Primærkontakt:</Text>
+                  <View style={styles.healthRow}>
+                    <Text style={styles.healthRowText}>{healthData.emergencyContact}</Text>
+                  </View>
+            </View>
+        )}
       </View>
-
+          ) : (
+              <View style={styles.headerCard}>
+                <Text style={styles.noDataTxt}>Ingenting av helsedata er registrert.</Text>
+              </View>
+          )}
 
       <TouchableOpacity style={styles.editButton}>
         <Text style={styles.editButtonText}>Rediger info</Text>
@@ -88,7 +173,12 @@ export default function StianProfile() {
   );
 }
 
+
 const styles = StyleSheet.create({
+  noDataTxt:{
+
+  },
+
   screen: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -100,7 +190,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  /* HEADER: blå bakgrunn, bilde + tekst */
   headerCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -146,7 +235,6 @@ const styles = StyleSheet.create({
     color: Colors.text,
   },
 
-
   departmentBar: {
     backgroundColor: Colors.primaryLightBlue,
     borderRadius: 12,
@@ -160,7 +248,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.text,
   },
-
 
   sectionTitle: {
     fontSize: 16,
@@ -213,6 +300,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingVertical: 8,
     paddingHorizontal: 10,
+    marginBottom: 6,
   },
 
   healthRowText: {

@@ -1,11 +1,42 @@
-import { View, Text,StyleSheet,Image,TouchableOpacity, ScrollView, } from "react-native";
-  import { Colors } from "@/constants/colors";
+import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator,} from "react-native";
+import { useState, useEffect } from "react";
+import { fetchCurrentUser } from "@/services/authApi";
+import {Child} from "@/models/child";
+import { Colors } from "@/constants/colors";
   import { Ionicons } from "@expo/vector-icons";
   import { useRouter } from "expo-router";
   import AsyncStorage from "@react-native-async-storage/async-storage";
   
   export default function ProfileScreen() {
     const router = useRouter();
+    const [children, setChildren] = useState<Child[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      async function fetchProfile(){
+        try {
+
+          const userStr = await AsyncStorage.getItem("currentUser");
+          if (!userStr) return;
+
+          const user = JSON.parse(userStr);
+          const parentId = user.profileId;
+
+          const res = await fetchCurrentUser(`/api/children/parent/${parentId}`);
+          if(res.ok){
+            const data = await res.json();
+            setChildren(data);
+          }
+
+        }catch (error){
+          console.error(error);
+        }finally {
+          setLoading(false);
+        }
+      }
+
+      fetchProfile();
+    }, []);
 
     async function handleLogout(){
       try {
@@ -65,22 +96,42 @@ import { View, Text,StyleSheet,Image,TouchableOpacity, ScrollView, } from "react
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Barn</Text>
-  
-          <TouchableOpacity
-            style={styles.childItem}
-            onPress={() => router.push("/child/edith")}
-          >
-            <Text style={styles.childName}>Edith Hansen</Text>
-            <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />
-          </TouchableOpacity>
-  
-          <TouchableOpacity
-            style={styles.childItem}
-            onPress={() => router.push("/child/stian")}
-          >
-            <Text style={styles.childName}>Stian Hansen</Text>
-            <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />
-          </TouchableOpacity>
+
+          {loading ? (
+              <ActivityIndicator size="small" color={Colors.primaryBlue}/>
+          ) : children.length > 0 ? (
+              children.map((child) =>(
+                  <TouchableOpacity
+                      style={styles.childItem}
+                      onPress={() => router.push("/child/edith")}
+                  >
+                    <Text style={styles.childName}>Edith Hansen</Text>
+                    <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />
+                  </TouchableOpacity>
+
+              ))
+          ) : (
+              <Text style={styles.noDataTxt}>Ingen barn registrert</Text>
+          )}
+
+          {/*Keeping this hardcoded code here as inspo*/}
+
+          {/*<TouchableOpacity*/}
+          {/*  style={styles.childItem}*/}
+          {/*  onPress={() => router.push("/child/edith")}*/}
+          {/*>*/}
+          {/*  <Text style={styles.childName}>Edith Hansen</Text>*/}
+          {/*  <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />*/}
+          {/*</TouchableOpacity>*/}
+
+          {/*<TouchableOpacity*/}
+          {/*  style={styles.childItem}*/}
+          {/*  onPress={() => router.push("/child/stian")}*/}
+          {/*>*/}
+          {/*  <Text style={styles.childName}>Stian Hansen</Text>*/}
+          {/*  <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />*/}
+          {/*</TouchableOpacity>*/}
+
         </View>
   
         <View style={styles.section}>
@@ -105,6 +156,12 @@ import { View, Text,StyleSheet,Image,TouchableOpacity, ScrollView, } from "react
   }
   
   const styles = StyleSheet.create({
+    noDataTxt: {
+      flex: 1,
+      backgroundColor: Colors.background,
+      padding: 20,
+    },
+
     container: {
       flex: 1,
       backgroundColor: Colors.background,
