@@ -10,19 +10,14 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { mockLogin } from "../../services/mockAuth";
-import { Colors } from "../../constants/colors";
+import { mockLogin } from "@/services/mockAuth";
+import { Colors } from "@/constants/colors";
 import {loginWithGoogle} from "@/services/authApi";
 
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 
 WebBrowser.maybeCompleteAuthSession();
-
-// Hvis backend kjører lokalt på 8080:
-const API_BASE_URL = Platform.OS === "android"
-? "http://10.0.2.2:8080"
-    : "http://localhost:8080";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -85,7 +80,7 @@ export default function LoginScreen() {
       }
     };
 
-    handleGoogleResponse();
+    void handleGoogleResponse();
   }, [response, router]);
 
   async function handleLogin() {

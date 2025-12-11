@@ -8,7 +8,7 @@ export default function RootLayout() {
     const router = useRouter();
 
     useEffect(() => {
-        checkAuth();
+        void checkAuth();
     }, []);
 
     async function checkAuth(){
@@ -24,7 +24,6 @@ export default function RootLayout() {
     useEffect(() => {
         if (isAuthenticated === null) return;
         const inAuthGroup = segments[0] === "(auth)";
-        const inTabsGroup = segments[0] === "(tabs)";
 
         console.log("Auth state:", isAuthenticated, "Segments:", segments);
 

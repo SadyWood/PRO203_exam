@@ -106,7 +106,7 @@ export default function MessageChatScreen() {
       }
     };
 
-    loadMessages();
+    void loadMessages();
   }, [storageKey, thread.messages]);
 
   // legg til i state + lagre i storage
