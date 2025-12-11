@@ -5,7 +5,7 @@ export default function PersonvernScreen() {
   const router = useRouter();
 
   function handleAccept() {
-    router.replace("/register");
+    router.replace("/registration");
   }
 
   return (

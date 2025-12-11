@@ -1,25 +1,14 @@
-// app/(auth)/login.tsx
 import { Stack, useLocalSearchParams, useRouter, Link } from "expo-router";
 import { useState, useEffect } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { mockLogin } from "../../services/mockAuth";
+import { KeyboardAvoidingView,Platform,Pressable,StyleSheet,Text, TextInput,View,} from "react-native";
+import { mockLogin } from "../../services/mockAuth"; // TODO: Bytt til ekte /auth/login når backend er klar
 import { Colors } from "../../constants/colors";
 
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
+import { loginWithGoogle } from "../../services/authApi"; 
 
 WebBrowser.maybeCompleteAuthSession();
-
-// Hvis backend kjører lokalt på 8080:
-const API_BASE_URL = "http://localhost:8080";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -32,14 +21,15 @@ export default function LoginScreen() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    // Fyll inn dine faktiske IDer fra Google Cloud Console:
-    clientId: "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com",
-    iosClientId: "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com",
-    androidClientId: "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com",
+    clientId:
+      "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com",
+    iosClientId:
+      "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com",
+    androidClientId:
+      "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com",
   });
 
   useEffect(() => {
-    // Kalles når Google-login svarer
     const handleGoogleResponse = async () => {
       if (response?.type === "success") {
         const idToken = response.params?.id_token;
@@ -54,37 +44,29 @@ export default function LoginScreen() {
           setIsGoogleLoading(true);
           setErrorMsg(null);
 
-          // Send ID-token til backend
-          const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken }),
-          });
+          const loginResponse = await loginWithGoogle(idToken);
+          const user = loginResponse.user;
 
-          const data = await res.json();
-          if (!res.ok) {
-            console.log("Google backend-feil:", data);
-            setErrorMsg(data?.message || "Google-innlogging feilet.");
-            return;
+          if (loginResponse.needsRegistration) {
+            return router.replace({
+              pathname: "/registration",
+              params: {
+                fullName: user.fullName,
+                email: user.email,
+              },
+            });
           }
 
-          // Forventer LoginResponseDto { token, user, needsRegistration }
-          console.log("Google login OK:", data);
-
-          const user = data.user;
-          // Her kan du evt. lagre JWT i AsyncStorage senere
-
-          // Navigasjon basert på rolle (lik mockLogin)
-          if (user?.role === "PARENT" || user?.role === "forelder") {
+          if (user.role === "PARENT") {
             router.replace("/home");
-          } else if (user?.role === "STAFF" || user?.role === "ansatt") {
-            router.replace("/");
+          } else if (user.role === "STAFF") {
+            router.replace("/(staff)/employee-home");
           } else {
-            router.replace("/");
+            router.replace("/home");
           }
-        } catch (err) {
+        } catch (err: any) {
           console.log("Feil ved Google-innlogging:", err);
-          setErrorMsg("Noe gikk galt med Google-innloggingen.");
+          setErrorMsg(err?.message ?? "Noe gikk galt med Google-innloggingen.");
         } finally {
           setIsGoogleLoading(false);
         }
@@ -108,6 +90,7 @@ export default function LoginScreen() {
     setErrorMsg(null);
 
     try {
+      // TODO: Bytt til ekte backend-kall (authApi.login) når /auth/login er klar
       const user = await mockLogin(
         email,
         password,
@@ -192,7 +175,6 @@ export default function LoginScreen() {
           </Text>
         </Pressable>
 
-        {/* 🔵 Google-knapp under vanlig login */}
         <Pressable
           style={[
             styles.googleButton,
@@ -202,7 +184,9 @@ export default function LoginScreen() {
           disabled={isGoogleLoading || !request}
         >
           <Text style={styles.googleButtonText}>
-            {isGoogleLoading ? "Logger inn med Google..." : "Logg inn med Google"}
+            {isGoogleLoading
+              ? "Logger inn med Google..."
+              : "Logg inn med Google"}
           </Text>
         </Pressable>
 
@@ -264,7 +248,7 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     marginTop: 8,
-    backgroundColor: "#1a73e8", // Google-blå-ish
+    backgroundColor: "#1a73e8",
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",

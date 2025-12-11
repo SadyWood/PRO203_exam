@@ -6,11 +6,11 @@ import { useState } from "react";
 
 export default function StianProfile() {
   const router = useRouter();
-
+// TODO: Hent barnets data fra backend (childrenApi.getChildById) og bruk som initial state
   const [sharePhotos, setSharePhotos] = useState(true);
   const [tripPermission, setTripPermission] = useState(true);
   const [showNamePublic, setShowNamePublic] = useState(false);
-
+// TODO: Når switcher endres, kall backend for å oppdatere barnets samtykker (childrenApi.updatePermissions)
   return (
     <ScrollView
       style={styles.screen}
@@ -20,7 +20,7 @@ export default function StianProfile() {
       <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/profile")}>
         <Ionicons name="chevron-back" size={26} color={Colors.text} />
       </TouchableOpacity>
-
+{/* TODO: Bildet og info bør komme fra backend, ikke hardkodet */}
       <View style={styles.headerCard}>
         <Image
           source={{ uri: "https://.../api/portraits/.jpg" }}

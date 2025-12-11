@@ -1,14 +1,8 @@
-// app/(tabs)/messages.tsx
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View,Text, StyleSheet,ScrollView,TouchableOpacity,} from "react-native";
 import { Colors } from "@/constants/colors";
 import { useRouter } from "expo-router";
 
+// TODO: Bytt ut MOCK_THREADS med data fra backend (f.eks. messagesApi.getThreadsForCurrentUser())
 const MOCK_THREADS = [
   {
     id: "1",
@@ -36,6 +30,12 @@ const MOCK_THREADS = [
 
 export default function MessagesScreen() {
   const router = useRouter();
+
+  // TODO: Når backend er klar, hent tråder i useEffect:
+  // const [threads, setThreads] = useState<ThreadSummary[]>([]);
+  // useEffect(() => {
+  //   messagesApi.getThreadsForCurrentUser().then(setThreads).catch(console.error);
+  // }, []);
 
   return (
     <View style={styles.container}>
@@ -65,6 +65,7 @@ export default function MessagesScreen() {
               </Text>
             </View>
 
+            {/* TODO: unreadCount bør komme fra backend når meldinger er lest */}
             {thread.unreadCount > 0 && (
               <View style={styles.unreadBadge}>
                 <Text style={styles.unreadText}>{thread.unreadCount}</Text>

@@ -21,7 +21,13 @@ export const Colors = {
     //tab og bar nav
     tabBackground: "#FFFFFF",
     tabIcon: "#9CA3AF",
-    tabIconSelected: "#111827"
+    tabIconSelected: "#111827",
+
+    // til reg
+    border: "#D1D5DB",       
+    primary: "#BACEFF",      
+    textPrimary: "#111827", 
+    textSecondary: "#6B7280" 
 
 
 

@@ -3,8 +3,8 @@
 type Role = "ansatt" | "forelder";
 
 let mockUsers: Array<{ email: string; password: string; role: Role }> = [
-  { email: "ansatt@test.no", password: "123456", role: "ansatt" },
-  { email: "forelder@test.no", password: "123456", role: "forelder" },
+  { email: "ao@mo.no", password: "123456", role: "ansatt" },
+  { email: "fo@mo.no", password: "123456", role: "forelder" },
 ];
 
 export async function mockLogin(email: string, password: string, role?: Role) {
