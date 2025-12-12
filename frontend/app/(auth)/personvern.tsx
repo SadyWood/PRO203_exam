@@ -1,11 +1,17 @@
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import {KeyboardAvoidingView, Platform, ScrollView,StyleSheet,Text, View, Pressable,} from "react-native";
+import { Colors} from "@/constants/colors";
 
 export default function PersonvernScreen() {
   const router = useRouter();
 
+  const {userId} = useLocalSearchParams<{ userId?: string}>();
+
   function handleAccept() {
-    router.replace("/register");
+    router.replace({
+      pathname: "/register",
+      params: {userId},
+    });
   }
 
   return (
