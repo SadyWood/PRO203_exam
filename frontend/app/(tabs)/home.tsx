@@ -73,7 +73,7 @@ export default function HomeScreen() {
                 <View style={styles.quickActionsRow}>
                     <PrimaryButton
                     label="Registrer fravær"
-                    onPress={() => {}}
+                    onPress={() => router.push("/absence/select-calendar")}
                     variant="danger"
                     />
                     <PrimaryButton 
