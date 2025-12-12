@@ -26,8 +26,6 @@ type Thread = {
   subtitle: string;
   messages: Message[];
 };
-// TODO: Bruk backend for å hente trådinfo og meldinger (messagesApi.getThreadById)
-// Denne konstanten brukes kun som fallback/demo-data.
 const THREADS: Record<string, Thread> = {
   "1": {
     id: "1",
@@ -91,9 +89,6 @@ export default function MessageChatScreen() {
 
   const storageKey = `chat_${threadId}`;
 
-  // TODO: Når backend er klar:
-  // 1. Hent meldinger fra backend (messagesApi.getMessages(threadId))
-  // 2. Bruk AsyncStorage som cache/offline fallback.
   useEffect(() => {
     const loadMessages = async () => {
       try {
@@ -112,7 +107,6 @@ export default function MessageChatScreen() {
     loadMessages();
   }, [storageKey, thread.messages]);
 
-  // legg til i state + lagre i storage
   async function handleSend() {
     const trimmed = inputText.trim();
     if (!trimmed) return;
@@ -127,9 +121,6 @@ export default function MessageChatScreen() {
     setMessages(updated);
     setInputText("");
 
-    // TODO: Når backend er klar – send meldingen til serveren:
-    // await messagesApi.sendMessage(threadId, trimmed);
-    // og oppdater state basert på svaret fra backend.
     try {
       await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
     } catch (e) {

@@ -5,12 +5,10 @@ import { Colors } from "@/constants/colors";
 export default function StartScreen() {
   return (
     <View style={styles.screen}>
-      {/* CHECK-KID øverst */}
       <View style={styles.logoBox}>
         <Text style={styles.logoText}>CHECK-KID ✅</Text>
       </View>
-
-      {/* Knapper og registrering */}
+      
       <View style={styles.content}>
         <Pressable style={styles.bigButton}>
           <Link

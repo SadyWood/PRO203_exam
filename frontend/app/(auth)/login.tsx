@@ -101,7 +101,7 @@ export default function LoginScreen() {
       if (user.role === "forelder") {
         router.replace("/home");
       } else if (user.role === "ansatt") {
-        router.replace("/");
+        router.replace("/(staff)/employee-home");
       } else {
         router.replace("/");
       }

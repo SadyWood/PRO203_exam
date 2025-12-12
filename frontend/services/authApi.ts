@@ -31,12 +31,11 @@ export interface CompleteRegistrationDto {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  address?: string;     // PARENT
-  employeeId?: string;  // STAFF
-  position?: string;    // STAFF
+  address?: string;     
+  employeeId?: string;  
+  position?: string;    
 }
 
-// Hjelper: normaliser login-responsen så frontend alltid har needsRegistration
 function normalizeLoginResponse(json: any): LoginResponseDto {
   return {
     token: json.token,
@@ -46,10 +45,6 @@ function normalizeLoginResponse(json: any): LoginResponseDto {
   };
 }
 
-/**
- * Logg inn med Google-idToken (fra expo-auth-session)
- * POST /auth/google
- */
 export async function loginWithGoogle(
   idToken: string
 ): Promise<LoginResponseDto> {
@@ -58,7 +53,7 @@ export async function loginWithGoogle(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ idToken }), // matcher GoogleAuthRequestDto
+    body: JSON.stringify({ idToken }), 
   });
 
   if (!res.ok) {
@@ -70,7 +65,7 @@ export async function loginWithGoogle(
       const errJson = JSON.parse(text);
       if (errJson.message) message = errJson.message;
     } catch {
-      // ignorer JSON-feil
+  
     }
     throw new Error(message);
   }
@@ -78,7 +73,6 @@ export async function loginWithGoogle(
   const json = await res.json();
   const loginResponse = normalizeLoginResponse(json);
 
-  // Lagre token & user med en gang
   await AsyncStorage.setItem("authToken", loginResponse.token);
   await AsyncStorage.setItem(
     "currentUser",
@@ -119,7 +113,6 @@ export async function fetchCurrentUser(): Promise<UserResponseDto | null> {
   return user;
 }
 
-
 export async function completeRegistration(
   data: CompleteRegistrationDto
 ): Promise<UserResponseDto> {
@@ -145,7 +138,7 @@ export async function completeRegistration(
       const errJson = JSON.parse(text);
       if (errJson.message) message = errJson.message;
     } catch {
-      // ignore
+
     }
     throw new Error(message);
   }

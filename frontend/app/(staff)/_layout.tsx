@@ -38,7 +38,7 @@ export default function StaffTabsLayout() {
       />
 
       <Tabs.Screen
-        name="calendar"
+        name="employee-calendar"
         options={{
           title: "Kalender",
           tabBarIcon: ({ color, size }) => (
@@ -56,7 +56,12 @@ export default function StaffTabsLayout() {
           ),
         }}
       />
-
+       <Tabs.Screen
+        name="employee-checkin"
+        options={{
+          href: null, 
+        }}
+      />
       <Tabs.Screen
         name="employee-messages"
         options={{  

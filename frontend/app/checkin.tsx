@@ -1,351 +1,243 @@
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    TouchableOpacity,
-    SafeAreaView,
-  } from "react-native";
-  import { useEffect, useState } from "react";
-  import { useRouter } from "expo-router";
-  import { Ionicons } from "@expo/vector-icons";
-  import { Colors } from "@/constants/colors";
-  import { fetchCurrentUser } from "../services/authApi";
-  import AsyncStorage from "@react-native-async-storage/async-storage";
-  
-  type CheckStatus = "INN" | "UT";
-  
-  type ChildCheckState = {
-    id: string;
-    name: string;
-    status: CheckStatus;
-    lastChange?: string;
-  };
-  
-  export default function CheckinScreen() {
-    const router = useRouter();
-    const [children, setChildren] = useState<ChildCheckState[]>([]);
-    const [parentName, setParentName] = useState<string | null>(null);
-  
-    useEffect(() => {
-      const init = async () => {
-        // TODO BACKEND:
-      // Når API for innsjekk er klart:
-      // 1) Hent barn + status fra backend i stedet for AsyncStorage,
-      //    f.eks. GET /api/parent/checkin-status
-      // 2) Bruk responsen til å fylle `children`-state.
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-        try {
-          const storedStatus = await AsyncStorage.getItem("edithStatus");
-          const storedTime = await AsyncStorage.getItem("edithLastChange");
-  
-          const initialStatus: CheckStatus =
-            storedStatus === "INN" || storedStatus === "UT"
-              ? storedStatus
-              : "UT";
-  
-          const mockKids: ChildCheckState[] = [
-            {
-              id: "edith-id",
-              name: "Edith Hansen",
-              status: initialStatus,
-              lastChange: storedTime ?? undefined,
-            },
-          ];
-  
-          setChildren(mockKids);
-        } catch (err) {
-          console.log("Feil ved henting av lagret status:", err);
-          setChildren([
-            { id: "edith-id", name: "Edith Hansen", status: "UT" },
-          ]);
-        }
-        
-      // Denne delen er allerede koblet mot auth-backend
-        try {
-          const user = await fetchCurrentUser();
-          if (user?.fullName) setParentName(user.fullName);
-        } catch (err) {
-          console.log("Feil ved henting av bruker:", err);
-        }
-      };
-  
-      init();
-    }, []);
-  
-    function toggleStatus(childId: string) {
-      let newStatusForStorage: CheckStatus | null = null;
-      let newTimestampForStorage: string | null = null;
-  
-      setChildren((prev) =>
-        prev.map((child) => {
-          if (child.id !== childId) return child;
-  
-          const newStatus: CheckStatus =
-            child.status === "INN" ? "UT" : "INN";
-  
-          const now = new Date();
-          const timeString = now.toLocaleTimeString("nb-NO", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-          const dateString = now.toLocaleDateString("nb-NO", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-          });
-  
-          const timestamp = `${dateString} kl. ${timeString}`;
-  
-          newStatusForStorage = newStatus;
-          newTimestampForStorage = timestamp;
-  
-          // TODO: Backend-kall, f.eks:
-          // await checkinApi.requestStatusChange(child.id, newStatus);
-  
-          return {
-            ...child,
-            status: newStatus,
-            lastChange: timestamp,
-          };
-        })
-      );
-  
-      if (newStatusForStorage) {
-        AsyncStorage.setItem("edithStatus", newStatusForStorage).catch((err) =>
-          console.log("Klarte ikke lagre status:", err)
-        );
-      }
-      if (newTimestampForStorage) {
-        AsyncStorage.setItem("edithLastChange", newTimestampForStorage).catch(
-          (err) => console.log("Klarte ikke lagre tidspunkt:", err)
-        );
-      }
+import { AppStyles, ButtonStyles, CheckinStyles } from "@/styles";
+import { checkerApi } from "../services/checkerApi";
+import type { PersonType } from "../services/types/checker";
+
+type CheckStatus = "INN" | "UT" | "NONE";
+
+type Child = {
+  id: string;
+  name: string;
+};
+
+const PARENT_PERSON_TYPE: PersonType = "Parent";
+
+const MOCK_PARENT_ID = "parent-id";
+const MOCK_PARENT_NAME = "Ola Hansen";
+
+const MOCK_CHILDREN: Child[] = [
+  { id: "edith-id", name: "Edith" }, 
+];
+
+function statusKey(childId: string) {
+  return `checkin_status_${childId}`;
+}
+function timeKey(childId: string) {
+  return `checkin_time_${childId}`;
+}
+
+function formatNowForDisplay(): string {
+  const now = new Date();
+  return now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+}
+
+export default function CheckinScreen() {
+  const router = useRouter();
+
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+
+  // status per barn
+  const [statusMap, setStatusMap] = useState<Record<string, CheckStatus>>({});
+  const [timeMap, setTimeMap] = useState<Record<string, string | null>>({});
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadLocalForAll = useCallback(async () => {
+    const nextStatus: Record<string, CheckStatus> = {};
+    const nextTime: Record<string, string | null> = {};
+
+    for (const c of MOCK_CHILDREN) {
+      const s = await AsyncStorage.getItem(statusKey(c.id));
+      const t = await AsyncStorage.getItem(timeKey(c.id));
+
+      if (s === "INN" || s === "UT") nextStatus[c.id] = s;
+      else nextStatus[c.id] = "NONE";
+
+      nextTime[c.id] = t ?? null;
     }
-  
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="chevron-back" size={26} color={Colors.text} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Sjekk inn / ut</Text>
-            <View style={{ width: 26 }} />
-          </View>
-  
-          <Text style={styles.subtitle}>
-            {parentName
-              ? `Her kan ${parentName} gi beskjed om at Edith har kommet eller dratt.`
-              : "Her kan du gi beskjed om at barnet ditt har kommet eller dratt."}
-          </Text>
-  
-          {/* Kort for hvert barn*/}
-          {children.map((child) => {
-            const isIn = child.status === "INN";
-            const btnLabel = isIn ? "Sjekk ut" : "Sjekk inn";
-            const statusLabel = isIn ? "Sjekket inn" : "Ikke sjekket inn";
-  
-            return (
-              <View key={child.id} style={styles.childCard}>
-                <Text style={styles.childTitle}>Barn</Text>
-  
-                <View style={styles.childHeaderRow}>
-                  <Text style={styles.childName}>{child.name}</Text>
-                  <View
-                    style={[
-                      styles.statusPill,
-                      isIn ? styles.statusPillIn : styles.statusPillOut,
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.statusDot,
-                        isIn ? styles.statusDotIn : styles.statusDotOut,
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.statusText,
-                        isIn ? styles.statusTextIn : styles.statusTextOut,
-                      ]}
-                    >
-                      {statusLabel}
-                    </Text>
-                  </View>
-                </View>
-  
-                {child.lastChange && (
-                  <Text style={styles.lastChangeText}>
-                    Sist oppdatert: {child.lastChange}
-                  </Text>
-                )}
-  
-                <TouchableOpacity
-                  style={[
-                    styles.checkButton,
-                    isIn ? styles.checkButtonOut : styles.checkButtonIn,
-                  ]}
-                  onPress={() => toggleStatus(child.id)}
-                  activeOpacity={0.9}
-                >
-                  <Text
-                    style={[
-                      styles.checkButtonText,
-                      isIn
-                        ? styles.checkButtonTextOut
-                        : styles.checkButtonTextIn,
-                    ]}
-                  >
-                    {btnLabel}
-                  </Text>
-                </TouchableOpacity>
-  
-                <Text style={styles.infoText}>
-                  Når du bekrefter, sendes dette til de ansatte som kan bruke
-                  informasjonen i sin løsning og i oppmøtelista.
-                </Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-      </SafeAreaView>
-    );
+
+    setStatusMap(nextStatus);
+    setTimeMap(nextTime);
+  }, []);
+
+  useEffect(() => {
+    loadLocalForAll().catch(() => {});
+  }, [loadLocalForAll]);
+
+  async function updateLocal(childId: string, newStatus: CheckStatus) {
+    const t = formatNowForDisplay();
+
+    if (newStatus === "INN" || newStatus === "UT") {
+      await AsyncStorage.setItem(statusKey(childId), newStatus);
+      await AsyncStorage.setItem(timeKey(childId), t);
+    } else {
+      await AsyncStorage.removeItem(statusKey(childId));
+      await AsyncStorage.removeItem(timeKey(childId));
+    }
+
+    setStatusMap((prev) => ({ ...prev, [childId]: newStatus }));
+    setTimeMap((prev) => ({ ...prev, [childId]: t }));
   }
 
-  const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: Colors.background,
-    },
-    scrollContent: {
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 32,
-      width: "100%",
-      maxWidth: 500,
-      alignSelf: "center",
-    },
-  
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 12,
-    },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: "700",
-      color: Colors.text,
-    },
-    subtitle: {
-      fontSize: 13,
-      color: Colors.textMuted,
-      marginBottom: 16,
-    },
-  
-    childCard: {
-      backgroundColor: "#FFFFFF",
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: Colors.primaryLightBlue,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      marginBottom: 20,
-      shadowColor: "#000",
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
-    },
-    childTitle: {
-      fontSize: 13,
-      fontWeight: "600",
-      color: Colors.textMuted,
-      marginBottom: 6,
-    },
-    childHeaderRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    childName: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: Colors.text,
-    },
-  
-    statusPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-    },
-    statusPillIn: {
-      backgroundColor: "#DCFCE7",
-    },
-    statusPillOut: {
-      backgroundColor: "#FEE2E2",
-    },
-    statusDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginRight: 6,
-    },
-    statusDotIn: {
-      backgroundColor: "#16A34A",
-    },
-    statusDotOut: {
-      backgroundColor: "#DC2626",
-    },
-    statusText: {
-      fontSize: 11,
-      fontWeight: "600",
-    },
-    statusTextIn: {
-      color: "#15803D",
-    },
-    statusTextOut: {
-      color: "#B91C1C",
-    },
-  
-    lastChangeText: {
-      fontSize: 11,
-      color: Colors.textMuted,
-      marginTop: 6,
-      marginBottom: 10,
-    },
-  
-    checkButton: {
-      borderRadius: 999,
-      paddingVertical: 11,
-      alignItems: "center",
-      marginBottom: 8,
-    },
-    checkButtonIn: {
-      backgroundColor: Colors.primaryBlue,
-    },
-    checkButtonOut: {
-      backgroundColor: Colors.red,
-    },
-    checkButtonText: {
-      fontSize: 14,
-      fontWeight: "700",
-    },
-    checkButtonTextIn: {
-      color: "#111827",
-    },
-    checkButtonTextOut: {
-      color: "#FFFFFF",
-    },
-  
-    infoText: {
-      fontSize: 11,
-      color: Colors.textMuted,
-      marginTop: 4,
-    },
-  });
-  
+  async function handleCheckIn(child: Child) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await checkerApi.checkIn({
+        childId: child.id,
+        droppedOffBy: MOCK_PARENT_ID,
+        droppedOffPersonType: PARENT_PERSON_TYPE,
+        droppedOffPersonName: MOCK_PARENT_NAME,
+        droppedOffConfirmedBy: null, 
+        notes: null,
+      });
+
+      await updateLocal(child.id, "INN");
+      setSelectedChild(null);
+    } catch (e: any) {
+      console.log("Feil ved check-in:", e);
+      setError("Kunne ikke registrere levering. Prøv igjen.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCheckOut(child: Child) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await checkerApi.checkOut({
+        childId: child.id,
+        pickedUpBy: MOCK_PARENT_ID,
+        pickedUpPersonType: PARENT_PERSON_TYPE,
+        pickedUpPersonName: MOCK_PARENT_NAME,
+        pickedUpConfirmedBy: null, 
+        pickedUpConfirmed: false, 
+        notes: null,
+      });
+
+      await updateLocal(child.id, "UT");
+      setSelectedChild(null);
+    } catch (e: any) {
+      console.log("Feil ved check-out:", e);
+      setError("Kunne ikke registrere henting. Prøv igjen.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function statusLabel(childId: string) {
+    const s = statusMap[childId] ?? "NONE";
+    const t = timeMap[childId];
+
+    if (s === "INN") return t ? `Levert kl. ${t}` : "Levert";
+    if (s === "UT") return t ? `Hentet kl. ${t}` : "Hentet";
+    return "Ingen status";
+  }
+
+  return (
+    <View style={AppStyles.screen}>
+      <View style={CheckinStyles.container}>
+        <View style={CheckinStyles.topRow}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={AppStyles.text}>←</Text>
+          </TouchableOpacity>
+
+          <Text style={CheckinStyles.title}>Sjekk inn / ut</Text>
+          <View />
+        </View>
+
+        {error && (
+          <View style={AppStyles.cardWhite}>
+            <Text style={AppStyles.text}>{error}</Text>
+          </View>
+        )}
+
+        <ScrollView contentContainerStyle={CheckinStyles.grid}>
+          {MOCK_CHILDREN.map((child) => (
+            <TouchableOpacity
+              key={child.id}
+              style={CheckinStyles.childCard}
+              onPress={() => setSelectedChild(child)}
+              activeOpacity={0.85}
+            >
+              <View style={CheckinStyles.avatarCircle}>
+                <Text style={CheckinStyles.avatarInitial}>
+                  {child.name.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+
+              <Text style={CheckinStyles.childName}>{child.name}</Text>
+              <Text style={CheckinStyles.statusLabel}>{statusLabel(child.id)}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {!!selectedChild && (
+          <View style={CheckinStyles.overlay}>
+            <View style={CheckinStyles.popupCard}>
+              <View style={CheckinStyles.popupHeaderRow}>
+                <Text style={CheckinStyles.popupName}>{selectedChild.name}</Text>
+
+                <TouchableOpacity onPress={() => setSelectedChild(null)}>
+                  <Text style={AppStyles.text}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={CheckinStyles.popupAvatarCircle}>
+                <Text style={CheckinStyles.popupAvatarInitial}>
+                  {selectedChild.name.slice(0, 1).toUpperCase()}
+                </Text>
+              </View>
+
+              <View style={CheckinStyles.popupButtons}>
+                <TouchableOpacity
+                  style={[ButtonStyles.base, ButtonStyles.primary]}
+                  onPress={() => handleCheckIn(selectedChild)}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  <Text style={ButtonStyles.textDark}>
+                    {loading ? "Lagrer..." : "Lever"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[ButtonStyles.base, ButtonStyles.danger]}
+                  onPress={() => handleCheckOut(selectedChild)}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  <Text style={ButtonStyles.textLight}>
+                    {loading ? "Lagrer..." : "Hent"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[ButtonStyles.base, ButtonStyles.neutral]}
+                  onPress={() => setSelectedChild(null)}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                >
+                  <Text style={ButtonStyles.textDark}>Avbryt</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={AppStyles.textMuted}>
+                Foreldre registrerer levering/henting. Ansatt kan senere bekrefte i
+                ansatt-appen når dere kobler begge til samme backend.
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
