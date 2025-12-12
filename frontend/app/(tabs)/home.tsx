@@ -1,17 +1,18 @@
 import {
-    View, 
-    Text, 
+    View,
+    Text,
     StyleSheet,
     ScrollView,
-    TouchableOpacity,
+    TouchableOpacity, Platform, ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/colors";
+import { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const MOCK_PARENT = {
-name: "Ola",
-children: ["Edith", "Stian"],
-};
+const API_BASE_URL = Platform.OS === "android"
+    ? "http://10.0.2.2:8080"
+    : "http://localhost:8080"
 
 const MOCK_AGENDA = [
     {
@@ -28,27 +29,85 @@ const MOCK_AGENDA = [
             "Stå opp og spise matpakke: 13:30",
             "Leke ute i snøen kl 14:30",
         ],
-    },
-    {
-        childName: "Stian",
-        date: "09.01.26",
-        absentRegistered: false,
-        items: [
-            "Felles oppstart: 08:45",
-            "tegne/puslespill: 09:00 - 10:00",
-            "Leseøkt: 10:15 - 10:45",
-            "Ryddetid: 10.45 - 11:00",
-            "Lunsj: 11:00, dagens varmmat: Pasta",
-            "På tur til slottet: 12:15",
-            "Spise matpakke: 13:00",
-            "Komme tilbake: 14:30",
-        ],
         note: "Vi skal på tur, husk ekstra mat!"
     },
 ];
 
 export default function HomeScreen() {
     const router = useRouter();
+
+    const [userName, setUserName] = useState<string>("");
+    const [children, setChildren] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+
+        async function loadUserData(){
+            try {
+                const userStr = await AsyncStorage.getItem("currentUser");
+
+                if (userStr){
+                    const user = JSON.parse(userStr);
+
+                    if (user.profileId && user.role === "PARENT"){
+                        await fetchParentProfile(user.profileId);
+                        await fetchChildren(user.profileId);
+                    }
+                }
+
+            }catch (error){
+                console.log(error);
+
+            }finally {
+                setLoading(false);
+
+            }
+
+        }
+
+        loadUserData();
+    }, []);
+
+    async function fetchParentProfile(parentId: string){
+        try {
+            const token = await AsyncStorage.getItem("authToken");
+            const res = await fetch(`${API_BASE_URL}/api/parents/${parentId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+
+            });
+            if(res.ok){
+                const parentData = await res.json();
+                setUserName(parentData.firstName || "");
+                console.log("Parent profile:", parentData);
+            }
+
+        }catch (error){
+            console.error(error);
+        }
+    }
+
+    async function fetchChildren(parentId: string){
+        try {
+            const token = await AsyncStorage.getItem("authToken");
+            const res = await fetch(`${API_BASE_URL}/api/children/parent/${parentId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if(res.ok){
+                const data = await res.json();
+                setChildren(data);
+            }
+
+        }catch (error){
+            console.log(error);
+        }
+
+    }
+
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.ScrollContent}>
@@ -61,14 +120,30 @@ export default function HomeScreen() {
                 <Text style={styles.bhgTitle}>Eventyrhagen Barnehage</Text>
 
                 {/*foreldre kort*/}
-                <View style={styles.parentCard}>
-                    <View>
-                        <Text style={styles.parentGreeting}>Hei {MOCK_PARENT.name}!</Text>
-                        <Text style={styles.parentSub}>
-                            Pappa til {MOCK_PARENT.children.join(" og ")}
-                        </Text>
+
+                {loading ? (
+                    <View style={styles.parentCard}>
+                        <ActivityIndicator size="small" color={Colors.primaryBlue}/>
+
                     </View>
-                </View>
+                ) : (
+                    <View style={styles.parentCard}>
+                        <View>
+                            <Text style={styles.parentGreeting}>
+                                Hei {userName}!
+                            </Text>
+                            {children.length > 0 && (
+                                <Text style={styles.parentSub}>
+                                    Forelder til {children.map(c => c.firstName).join (" og ")}
+                                </Text>
+                            )}
+
+                        </View>
+
+                    </View>
+
+                )}
+
                 {/* HurtigKnapper */}
                 <View style={styles.quickActionsRow}>
                     <PrimaryButton

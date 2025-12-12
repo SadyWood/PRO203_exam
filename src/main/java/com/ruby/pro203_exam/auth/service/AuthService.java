@@ -140,6 +140,8 @@ public class AuthService {
                 .phoneNumber(dto.getPhoneNumber())
                 .employeeId(dto.getEmployeeId())
                 .position(dto.getPosition())
+                .kindergartenId(dto.getKindergartenId())
+                .isAdmin(false)
                 .build();
 
         Staff saved = staffRepository.save(staff);

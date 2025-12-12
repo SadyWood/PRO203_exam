@@ -17,24 +17,10 @@ export default function StartScreen() {
             href={{ pathname: "/login", params: { role: "ansatt" } }}
             style={styles.bigButtonText}
           >
-            Logg inn Ansatt
+            Logg inn med Google
           </Link>
         </Pressable>
 
-        <Pressable style={styles.bigButton}>
-          <Link
-            href={{ pathname: "/login", params: { role: "forelder" } }}
-            style={styles.bigButtonText}
-          >
-            Logg inn Primærkontakt
-          </Link>
-        </Pressable>
-
-        <Pressable style={styles.registerBox}>
-          <Link href={{ pathname: "/personvern" }} style={styles.registerText}>
-            Ikke registrert? Registrer deg her nå
-          </Link>
-        </Pressable>
       </View>
     </View>
   );

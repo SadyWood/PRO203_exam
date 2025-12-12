@@ -36,8 +36,14 @@ export default function RootLayout() {
     useEffect(() => {
         if (isAuthenticated === null) return;
         const inAuthGroup = segments[0] === "(auth)";
+        const isRegisterScreen = segments[0] === "register";
+        const isPersonvernScreen = segments.includes("personvern");
 
         console.log("Auth state:", isAuthenticated, "Segments:", segments);
+
+        if(isRegisterScreen || isPersonvernScreen){
+            return;
+        }
 
         if(!isAuthenticated && !inAuthGroup && segments[0] !== undefined){
             router.replace("/");

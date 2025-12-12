@@ -65,11 +65,15 @@ public class AuthController {
                     user.getId()
             );
 
+            boolean reqReg = (user.getRole() == null || user.getProfileId() == null);
+
+            log.info("User {}, needs to register: {}", user.getEmail(), reqReg);
+
             // Build response
             LoginResponseDto response = LoginResponseDto.builder()
                     .token(jwtToken)
                     .user(user)
-                    .needsRegistration(user.getRole() == null || user.getProfileId() == null)
+                    .needsRegistration(reqReg)
                     .build();
 
             log.info("User authenticated: {}", user.getEmail());

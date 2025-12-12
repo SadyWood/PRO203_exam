@@ -56,9 +56,19 @@ export default function LoginScreen() {
 
           const loginResponse = await loginWithGoogle(idToken);
           console.log("Google login OK:", loginResponse);
-          const user = loginResponse.user;
           // Her kan du evt. lagre JWT i AsyncStorage senere
+
+          if (loginResponse.needsRegistration){
+            router.push({
+              pathname: "/personvern",
+              params: { userId: loginResponse.user.id},
+            })
+            return;
+          }
+
           await authRefresh();
+
+          const user = loginResponse.user;
 
           // Navigasjon basert på rolle (lik mockLogin)
           if (user?.role === "PARENT") {
