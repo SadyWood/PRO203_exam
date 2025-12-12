@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator,} from "react-native";
+import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Platform,} from "react-native";
 import { useState, useEffect } from "react";
 import { fetchCurrentUser } from "@/services/authApi";
 import {Child} from "@/models/child";
@@ -6,9 +6,15 @@ import { Colors } from "@/constants/colors";
   import { Ionicons } from "@expo/vector-icons";
   import { useRouter } from "expo-router";
   import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const API_BASE_URL = Platform.OS === "android"
+    ? "http://10.0.2.2:8080"
+    : "http://localhost:8080"
   
   export default function ProfileScreen() {
     const router = useRouter();
+
+    const [parentData, setParentData] = useState<any>(null);;
     const [children, setChildren] = useState<Child[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -17,17 +23,15 @@ import { Colors } from "@/constants/colors";
         try {
 
           const userStr = await AsyncStorage.getItem("currentUser");
-          if (!userStr) return;
+          if (userStr) {
+            const user = JSON.parse(userStr);
 
-          const user = JSON.parse(userStr);
-          const parentId = user.profileId;
+            if (user.profileId && user.role === "PARENT") {
+              await fetchParentProfile(user.profileId);
+              await fetchChildren(user.profileId);
+            }
 
-          const res = await fetchCurrentUser(`/api/children/parent/${parentId}`);
-          if(res.ok){
-            const data = await res.json();
-            setChildren(data);
           }
-
         }catch (error){
           console.error(error);
         }finally {
@@ -37,6 +41,47 @@ import { Colors } from "@/constants/colors";
 
       fetchProfile();
     }, []);
+
+    async function fetchParentProfile(parentId: string){
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        const res = await fetch(`${API_BASE_URL}/api/parents/${parentId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+
+        });
+
+        if(res.ok){
+          const data = await res.json();
+          setParentData(data);
+          console.log(data);
+        }
+
+      }catch (error){
+        console.error(error);
+      }
+    }
+
+    async function fetchChildren(parentId: string){
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        const res = await fetch(`${API_BASE_URL}/api/children/parents/${parentId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+
+        });
+
+        if(res.ok){
+          const data = await res.json();
+          setChildren(data);
+        }
+
+      }catch (error){
+        console.error(error);
+      }
+    }
 
     async function handleLogout(){
       try {
@@ -52,19 +97,32 @@ import { Colors } from "@/constants/colors";
   
     return (
       <ScrollView style={styles.container}>
-        <View style={styles.profileCard}>
-          <Image
-            source={{ uri: "https://randomuser.me/api/portraits/boy/32.jpg" }}
-            style={styles.avatar}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>Ola Hansen</Text>
-          </View>
-        </View>
+
+        {loading ? (
+            <View style={styles.profileCard}>
+              <ActivityIndicator size="small" color={Colors.primaryBlue}/>
+            </View>
+        ) : (
+            <View style={styles.profileCard}>
+              <Image
+                source={{ uri: "https://randomuser.me/api/portraits/boy/32.jpg" }}
+                style={styles.avatar}/>
+
+              <View style={{ flex: 1}}>
+                <Text style={styles.name}>
+                  {parentData?.firstName} {parentData?.lastName}
+
+                </Text>
+              </View>
+            </View>
+
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Kontaktinformasjon</Text>
-  
+
+
+
           <View style={styles.infoBox}>
             <View style={styles.infoRow}>
               <Ionicons
@@ -73,7 +131,9 @@ import { Colors } from "@/constants/colors";
                 color={Colors.text}
                 style={styles.infoIcon}
               />
-              <Text style={styles.infoText}>olahansen@gmail.com</Text>
+              <Text style={styles.infoText}>
+                {parentData?.email || "Ingen e-post"}
+              </Text>
             </View>
   
             <View style={styles.infoRow}>
@@ -83,7 +143,9 @@ import { Colors } from "@/constants/colors";
                 color={Colors.text}
                 style={styles.infoIcon}
               />
-              <Text style={styles.infoText}>+47 123 45 678</Text>
+              <Text style={styles.infoText}>
+                {parentData?.phoneNumber || "Ingen telefon"}
+              </Text>
             </View>
   
             
@@ -102,10 +164,13 @@ import { Colors } from "@/constants/colors";
           ) : children.length > 0 ? (
               children.map((child) =>(
                   <TouchableOpacity
+                      key={child.id}
                       style={styles.childItem}
-                      onPress={() => router.push("/child/edith")}
+                      onPress={() => router.push(`/child/${child.id}`)}
                   >
-                    <Text style={styles.childName}>Edith Hansen</Text>
+                    <Text style={styles.childName}>
+                      {child.firstName} {child.lastName}
+                    </Text>
                     <Ionicons name="arrow-forward" size={20} color={Colors.textMuted} />
                   </TouchableOpacity>
 
