@@ -1,5 +1,6 @@
 package com.ruby.pro203_exam.parent.controller;
 
+import com.ruby.pro203_exam.parent.dto.ParentProfileResponseDto;
 import com.ruby.pro203_exam.parent.dto.ParentResponseDto;
 import com.ruby.pro203_exam.parent.service.ParentService;
 import lombok.RequiredArgsConstructor;
@@ -32,5 +33,11 @@ public class ParentController {
     public ResponseEntity<ParentResponseDto> getParentById(@PathVariable UUID id) {
         log.info("GET /api/parents/{}", id);
         return ResponseEntity.ok(parentService.getParentById(id));
+    }
+
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<ParentProfileResponseDto> getParentProfile(@PathVariable UUID id) {
+        log.info("GET /api/parents/{}/profile", id);
+        return ResponseEntity.ok(parentService.getParentProfile(id));
     }
 }
