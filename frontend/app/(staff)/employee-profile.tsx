@@ -39,7 +39,7 @@ export default function EmployeeProfile() {
       {/* Header */}
       <View style={EmployeeProfileStyles.headerCard}>
         <Image
-          source={{ uri: "https://randomuser.me/api/portraits/women/44.jpg" }}
+          source={{ uri: "https://randomuser.me/api/portraits/womn/44.jpg" }}
           style={EmployeeProfileStyles.avatar}
         />
   

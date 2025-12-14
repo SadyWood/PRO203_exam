@@ -9,59 +9,52 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ChatStyles } from "@/styles";
-
-type Message = {
-  id: string;
-  from: "parent" | "staff";
-  text: string;
-};
-
-type Thread = {
-  id: string;
-  name: string;
-  subtitle: string;
-  messages: Message[];
-};
+import { MOCK_THREADS, type Message, type Thread } from "../../(mock)/mockThreads";
 
 export default function EmployeeChat() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
 
-  const THREADS: Record<string, Thread> = {
-    "1": {
-      id: "1",
-      name: "Ola Hansen",
-      subtitle: "Foresatt til Stian • Avdeling Bjørn",
-      messages: [],
-    },
-  };
-
   const threadId = typeof params.id === "string" ? params.id : "1";
-  const thread = useMemo(
-    () => THREADS[threadId] ?? THREADS["1"],
-    [threadId]
-  );
 
-  const storageKey = `chat_staff_${threadId}`;
+  const thread: Thread = useMemo(() => {
+    return MOCK_THREADS[threadId] ?? MOCK_THREADS["1"];
+  }, [threadId]);
+
+  const messagesKey = `chat_thread_${threadId}`;
+  const lastSeenKey = `chat_thread_last_seen_${threadId}`;
 
   const [messages, setMessages] = useState<Message[]>(thread.messages);
   const [input, setInput] = useState("");
+
+  const scrollRef = useRef<ScrollView>(null);
 
   function handleBack() {
     router.replace("/(staff)/employee-messages");
   }
 
+
   useEffect(() => {
-    async function loadMessages() {
-      const stored = await AsyncStorage.getItem(storageKey);
-      if (stored) setMessages(JSON.parse(stored));
+    async function load() {
+      const stored = await AsyncStorage.getItem(messagesKey);
+      const msgs = stored ? JSON.parse(stored) : thread.messages;
+      setMessages(msgs);
+
+      const last = msgs[msgs.length - 1];
+      if (last) {
+        await AsyncStorage.setItem(lastSeenKey, last.id);
+      }
     }
-    loadMessages();
-  }, [storageKey]);
+    load();
+  }, [messagesKey, lastSeenKey, thread.messages]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }, [messages.length]);
 
   async function sendMessage() {
     const trimmed = input.trim();
@@ -77,7 +70,8 @@ export default function EmployeeChat() {
     setMessages(updated);
     setInput("");
 
-    await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
+    await AsyncStorage.setItem(messagesKey, JSON.stringify(updated));
+    await AsyncStorage.setItem(lastSeenKey, newMsg.id); 
   }
 
   return (
@@ -87,27 +81,23 @@ export default function EmployeeChat() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
       <View style={ChatStyles.container}>
-        {/* Header */}
         <View style={ChatStyles.headerRow}>
-          <TouchableOpacity onPress={handleBack}>
+        <TouchableOpacity onPress={handleBack}>
             <Ionicons name="chevron-back" size={26} />
           </TouchableOpacity>
-
           <View style={ChatStyles.headerBox}>
             <Text style={ChatStyles.name}>{thread.name}</Text>
             <Text style={ChatStyles.subtitle}>{thread.subtitle}</Text>
           </View>
         </View>
 
-        {/* Messages */}
         <ScrollView
+          ref={scrollRef}
           style={ChatStyles.messagesBox}
           contentContainerStyle={ChatStyles.messagesContent}
-          keyboardShouldPersistTaps="handled"
         >
           {messages.map((msg) => {
             const isStaff = msg.from === "staff";
-
             return (
               <View
                 key={msg.id}
@@ -133,17 +123,14 @@ export default function EmployeeChat() {
           })}
         </ScrollView>
 
-        {/* Input */}
         <View style={ChatStyles.inputRow}>
           <TextInput
             style={ChatStyles.chatInput}
             placeholder="Skriv en melding..."
             value={input}
             onChangeText={setInput}
-            returnKeyType="send"
             onSubmitEditing={sendMessage}
           />
-
           <TouchableOpacity
             style={ChatStyles.sendButton}
             onPress={sendMessage}

@@ -1,35 +1,59 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ParentMessagesStyles } from "@/styles";
+import {
+  MOCK_PARENT_THREADS,
+  type ParentThread,
+} from "../(mock)/mockParentThreads";
 
-const MOCK_THREADS = [
-  {
-    id: "1",
-    name: "Karoline",
-    subtitle: "Lærer i Stian avdeling Bjørn",
-    unreadCount: 1,
-    lastMessage:
-      "Hei Olai! Stian skal på tur i morgen til slottet. Husk ekstra sokker ...",
-  },
-  {
-    id: "2",
-    name: "Simon",
-    subtitle: "Lærer i Edith avdeling Loppe",
-    unreadCount: 0,
-    lastMessage: "Takk for at du leverte lappen til turen i dag!",
-  },
-  {
-    id: "3",
-    name: "Pia",
-    subtitle: "Rektor Eventyrhagen Barnehage",
-    unreadCount: 0,
-    lastMessage: "Ny månedsplan ligger nå i appen under kalender.",
-  },
-];
+type ThreadSummary = {
+  id: string;
+  name: string;
+  subtitle: string;
+  lastMessage: string;
+};
+
+function lastMessageFromMock(t: ParentThread) {
+  return t.messages[t.messages.length - 1]?.text ?? "Ingen meldinger enda";
+}
 
 export default function MessagesScreen() {
   const router = useRouter();
+  const [threads, setThreads] = useState<ThreadSummary[]>([]);
+
+  const loadThreads = useCallback(async () => {
+    const next: ThreadSummary[] = [];
+
+    for (const t of Object.values(MOCK_PARENT_THREADS)) {
+      const key = `parent_chat_${t.id}`;
+      let msgs = t.messages;
+
+      try {
+        const stored = await AsyncStorage.getItem(key);
+        if (stored) msgs = JSON.parse(stored);
+      } catch {}
+
+      const last = msgs[msgs.length - 1];
+
+      next.push({
+        id: t.id,
+        name: t.name,
+        subtitle: t.subtitle,
+        lastMessage: last?.text ?? lastMessageFromMock(t),
+      });
+    }
+
+    setThreads(next);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadThreads();
+    }, [loadThreads])
+  );
 
   return (
     <View style={ParentMessagesStyles.screen}>
@@ -37,7 +61,7 @@ export default function MessagesScreen() {
         <Text style={ParentMessagesStyles.title}>Meldinger</Text>
 
         <ScrollView contentContainerStyle={ParentMessagesStyles.listContent}>
-          {MOCK_THREADS.map((thread) => (
+          {threads.map((thread) => (
             <TouchableOpacity
               key={thread.id}
               style={ParentMessagesStyles.item}
@@ -60,21 +84,10 @@ export default function MessagesScreen() {
                   </Text>
                 ) : null}
 
-                <Text
-                  style={ParentMessagesStyles.preview}
-                  numberOfLines={1}
-                >
+                <Text style={ParentMessagesStyles.preview} numberOfLines={1}>
                   {thread.lastMessage}
                 </Text>
               </View>
-
-              {thread.unreadCount > 0 && (
-                <View style={ParentMessagesStyles.badge}>
-                  <Text style={ParentMessagesStyles.badgeText}>
-                    {thread.unreadCount}
-                  </Text>
-                </View>
-              )}
             </TouchableOpacity>
           ))}
         </ScrollView>

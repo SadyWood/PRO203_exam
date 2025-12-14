@@ -1,8 +1,11 @@
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useCallback, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { EmployeeMessagesStyles } from "@/styles";
+import { MOCK_THREADS, type Thread } from "../(mock)/mockThreads";
 
 type StaffThreadSummary = {
   id: string;
@@ -12,43 +15,70 @@ type StaffThreadSummary = {
   lastMessage: string;
 };
 
-const THREADS: StaffThreadSummary[] = [
-  {
-    id: "1",
-    name: "Ola Hansen",
-    subtitle: "Foresatt til Stian • Avdeling Bjørn",
-    unreadCount: 1,
-    lastMessage:
-      "Hei! Vi finner ikke den blå lua til Stian. Har dere sett den i garderoben i dag?",
-  },
-  {
-    id: "2",
-    name: "Mariam Ali",
-    subtitle: "Foresatt til Edith • Avdeling Loppe",
-    unreadCount: 0,
-    lastMessage:
-      "Tusen takk for oppdateringen i dag 😊 Edith sovnet tidlig hjemme etter en fin dag.",
-  },
-  {
-    id: "3",
-    name: "Jonas Nilsen",
-    subtitle: "Foresatt til Amir • Avdeling Rev",
-    unreadCount: 0,
-    lastMessage:
-      "Hei! Amir blir hentet av bestemor kl. 15:30 i dag. Hun heter Ragnhild.",
-  },
-  {
-    id: "4",
-    name: "Sara Berg",
-    subtitle: "Foresatt til Lea • Avdeling Bjørn",
-    unreadCount: 2,
-    lastMessage:
-      "Kan dere minne Lea på å ta med regntøy i morgen? Det skal visst regne på turdag.",
-  },
-];
+function getLastMessageText(thread: Thread) {
+  const last = thread.messages[thread.messages.length - 1];
+  return last?.text ?? "Ingen meldinger enda";
+}
 
 export default function EmployeeMessages() {
   const router = useRouter();
+  const [threads, setThreads] = useState<StaffThreadSummary[]>([]);
+
+  const loadThreads = useCallback(async () => {
+    const result: StaffThreadSummary[] = [];
+
+    for (const thread of Object.values(MOCK_THREADS)) {
+      const messagesKey = `chat_thread_${thread.id}`;
+      const lastSeenKey = `chat_thread_last_seen_${thread.id}`;
+
+      let messages = thread.messages;
+      let unreadCount = 0;
+
+      try {
+        const storedMessages = await AsyncStorage.getItem(messagesKey);
+        const lastSeen = await AsyncStorage.getItem(lastSeenKey);
+
+        if (storedMessages) {
+          messages = JSON.parse(storedMessages);
+        }
+
+        const lastMsg = messages[messages.length - 1];
+
+        // 👉 ekte unread-logikk
+        if (
+          lastMsg &&
+          lastMsg.from === "parent" &&
+          (!lastSeen || lastSeen !== lastMsg.id)
+        ) {
+          unreadCount = 1;
+        }
+
+        result.push({
+          id: thread.id,
+          name: thread.name,
+          subtitle: thread.subtitle,
+          unreadCount,
+          lastMessage: lastMsg?.text ?? getLastMessageText(thread),
+        });
+      } catch {
+        result.push({
+          id: thread.id,
+          name: thread.name,
+          subtitle: thread.subtitle,
+          unreadCount: 0,
+          lastMessage: getLastMessageText(thread),
+        });
+      }
+    }
+
+    setThreads(result);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadThreads();
+    }, [loadThreads])
+  );
 
   return (
     <View style={EmployeeMessagesStyles.screen}>
@@ -58,7 +88,6 @@ export default function EmployeeMessages() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={26} />
           </TouchableOpacity>
-
           <Text style={EmployeeMessagesStyles.title}>Meldinger</Text>
         </View>
 
@@ -66,7 +95,7 @@ export default function EmployeeMessages() {
           style={EmployeeMessagesStyles.list}
           contentContainerStyle={EmployeeMessagesStyles.listContent}
         >
-          {THREADS.map((t) => (
+          {threads.map((t) => (
             <TouchableOpacity
               key={t.id}
               style={EmployeeMessagesStyles.item}
@@ -80,13 +109,9 @@ export default function EmployeeMessages() {
             >
               <View style={EmployeeMessagesStyles.itemLeft}>
                 <Text style={EmployeeMessagesStyles.itemTitle}>{t.name}</Text>
-
-                {t.subtitle ? (
-                  <Text style={EmployeeMessagesStyles.itemSubtitle}>
-                    {t.subtitle}
-                  </Text>
-                ) : null}
-
+                <Text style={EmployeeMessagesStyles.itemSubtitle}>
+                  {t.subtitle}
+                </Text>
                 <Text
                   style={EmployeeMessagesStyles.preview}
                   numberOfLines={1}

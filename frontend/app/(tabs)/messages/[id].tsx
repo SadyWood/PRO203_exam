@@ -10,118 +10,71 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ChatStyles } from "@/styles";
-
-type Message = {
-  id: string;
-  from: "karoline" | "simon" | "pia" | "forelder";
-  text: string;
-};
-
-type Thread = {
-  id: string;
-  name: string;
-  subtitle: string;
-  messages: Message[];
-};
-
-// ✅ MOCK beholdes (ingen backend)
-const THREADS: Record<string, Thread> = {
-  "1": {
-    id: "1",
-    name: "Karoline",
-    subtitle: "Lærer til Stian avdeling Bjørn",
-    messages: [
-      {
-        id: "m1",
-        from: "karoline",
-        text:
-          "Hei Olai! Stian skal på tur i morgen til slottet, men jeg ser i hylla hans at han har for få ekstra par med sokker og ull undertøy. Dette kommer til å trenges hvis han blir våt underveis på turen.",
-      },
-      {
-        id: "m2",
-        from: "forelder",
-        text:
-          "Hei Karoline! Takk for beskjed. Jeg skal huske å ta med ekstra sokker og ull undertøy når Stian kommer til barnehagen i morgen.",
-      },
-      { id: "m3", from: "karoline", text: "Supert!" },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Simon",
-    subtitle: "Lærer til Edith avdeling Loppe",
-    messages: [
-      {
-        id: "m1",
-        from: "simon",
-        text: "Hei! Edith hadde en veldig fin dag i dag ☺️",
-      },
-    ],
-  },
-  "3": {
-    id: "3",
-    name: "Pia",
-    subtitle: "Rektor Eventyrhagen Barnehage",
-    messages: [
-      {
-        id: "m1",
-        from: "pia",
-        text: "Hei! Ny månedsplan ligger nå i kalenderen i appen.",
-      },
-    ],
-  },
-};
+import {
+  MOCK_PARENT_THREADS,
+  type ParentThread,
+  type ParentMessage,
+} from "../../(mock)/mockParentThreads";
 
 export default function MessageChatScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
 
   const threadId = typeof params.id === "string" ? params.id : "1";
-  const thread = useMemo(() => THREADS[threadId] ?? THREADS["1"], [threadId]);
 
-  const storageKey = `chat_${threadId}`;
+  const thread: ParentThread = useMemo(() => {
+    return MOCK_PARENT_THREADS[threadId] ?? MOCK_PARENT_THREADS["1"];
+  }, [threadId]);
 
-  const [messages, setMessages] = useState<Message[]>(thread.messages);
+  const storageKey = `parent_chat_${threadId}`;
+
+  const [messages, setMessages] = useState<ParentMessage[]>(thread.messages);
   const [inputText, setInputText] = useState("");
 
+  const scrollRef = useRef<ScrollView>(null);
+
   function handleBack() {
-    if (router.canGoBack()) router.back();
-    else router.replace("/messages");
+    router.replace("/(tabs)/messages");
   }
+  
 
   useEffect(() => {
-    const loadMessages = async () => {
+    let mounted = true;
+
+    async function loadMessages() {
       try {
         const stored = await AsyncStorage.getItem(storageKey);
-
-        if (stored) {
-          const parsed: Message[] = JSON.parse(stored);
-          if (parsed.length > 0) {
-            setMessages(parsed);
-            return;
-          }
-        }
-
-        setMessages(thread.messages);
-      } catch (e) {
-        console.log("Feil ved lesing av meldinger:", e);
+        const msgs: ParentMessage[] = stored ? JSON.parse(stored) : thread.messages;
+        if (!mounted) return;
+        setMessages(msgs);
+      } catch {
         setMessages(thread.messages);
       }
-    };
+    }
 
     loadMessages();
+    return () => {
+      mounted = false;
+    };
   }, [storageKey, thread.messages]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [messages.length]);
 
   async function handleSend() {
     const trimmed = inputText.trim();
     if (!trimmed) return;
 
-    const newMessage: Message = {
+    const newMessage: ParentMessage = {
       id: Date.now().toString(),
-      from: "forelder",
+      from: "parent",
       text: trimmed,
     };
 
@@ -131,9 +84,7 @@ export default function MessageChatScreen() {
 
     try {
       await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
-    } catch (e) {
-      console.log("Feil ved lagring av melding:", e);
-    }
+    } catch {}
   }
 
   return (
@@ -157,26 +108,33 @@ export default function MessageChatScreen() {
 
         {/* Messages */}
         <ScrollView
+          ref={scrollRef}
           style={ChatStyles.messagesBox}
           contentContainerStyle={ChatStyles.messagesContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() =>
+            scrollRef.current?.scrollToEnd({ animated: true })
+          }
         >
           {messages.map((m) => {
-            const isParent = m.from === "forelder";
+            const isStaff = m.from === "staff";
 
             return (
               <View
                 key={m.id}
                 style={[
                   ChatStyles.bubble,
-                  isParent ? ChatStyles.staffBubble : ChatStyles.parentBubble,
+                  // ✅ Farger: blå = staff, hvit = parent
+                  isStaff ? ChatStyles.staffBubble : ChatStyles.parentBubble,
+                  // ✅ Side: staff venstre, parent høyre
+                  { alignSelf: isStaff ? "flex-start" : "flex-end" },
                 ]}
               >
                 <Text
                   style={[
                     ChatStyles.bubbleText,
-                    isParent ? ChatStyles.staffText : ChatStyles.parentText,
+                    isStaff ? ChatStyles.staffText : ChatStyles.parentText,
                   ]}
                 >
                   {m.text}
@@ -196,7 +154,6 @@ export default function MessageChatScreen() {
             returnKeyType="send"
             onSubmitEditing={handleSend}
           />
-
           <TouchableOpacity style={ChatStyles.sendButton} onPress={handleSend}>
             <Ionicons name="arrow-forward" size={20} color="white" />
           </TouchableOpacity>
