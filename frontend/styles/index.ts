@@ -1,11 +1,17 @@
-export { AppStyles } from "./appStyles";
-export { ButtonStyles } from "./buttons";
-export { InputStyles } from "./inputs";
-export { ListStyles } from "./lists";
+export { EditProfileStyles } from "./editProfileStyles";
 export { ChatStyles } from "./chat";
-export { CheckinStyles } from "./checkin";
 export { EmployeeHomeStyles } from "./employeeHome";
 export { EmployeeProfileStyles } from "./employeeProfile";
 export { ParentProfileStyles } from "./parentProfile";
 export { ChildProfileStyles } from "./childProfile";
-export { EditChildStyles } from "./editChild";
+export { EmployeeCheckinStyles } from "./employeeCheckinStyles";
+export { ChildEditStyles } from "./childEditStyles";
+export { EmployeeMessagesStyles } from "./employeeMessagesStyles";
+export { ParentMessagesStyles } from "./parentMessagesStyles";
+export { ParentCheckinStyles } from "./parentCheckinStyles";
+export { PostsStyles } from "./postsStyles";
+export { EmployeeChildrenStyles } from "./employeeChildrenStyles";
+
+
+
+

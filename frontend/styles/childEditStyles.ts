@@ -1,13 +1,17 @@
-// styles/editChild.ts
 import { StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
+import { Shadows } from "./shadows";
 
-export const EditChildStyles = StyleSheet.create({
+export const ChildEditStyles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+
+  scrollContent: {
+    paddingBottom: 32,
   },
 
   backButton: {
@@ -16,46 +20,51 @@ export const EditChildStyles = StyleSheet.create({
 
   title: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "900",
     marginBottom: 16,
     color: Colors.text,
   },
 
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "900",
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 10,
     color: Colors.text,
   },
 
   card: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
+    paddingVertical: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    ...Shadows.soft,
   },
 
   label: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "800",
     color: Colors.text,
-    marginBottom: 4,
-    marginTop: 4,
+    marginBottom: 6,
+    marginTop: 6,
   },
 
   input: {
-    backgroundColor: "#ffffff",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     fontSize: 14,
     color: Colors.text,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
 
   multilineInput: {
-    minHeight: 60,
+    minHeight: 80,
     textAlignVertical: "top",
   },
 
@@ -63,12 +72,12 @@ export const EditChildStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
 
   switchLabel: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     color: Colors.text,
     flex: 1,
     marginRight: 8,
@@ -76,23 +85,24 @@ export const EditChildStyles = StyleSheet.create({
 
   errorBox: {
     backgroundColor: "#FEE2E2",
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 8,
+    paddingVertical: 10,
+    marginTop: 10,
   },
 
   errorText: {
     fontSize: 12,
     color: "#B91C1C",
+    fontWeight: "600",
   },
 
   saveButton: {
     marginTop: 16,
     alignSelf: "center",
     paddingHorizontal: 40,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingVertical: 14,
+    borderRadius: 16,
     backgroundColor: Colors.primaryBlue,
   },
 
@@ -102,7 +112,7 @@ export const EditChildStyles = StyleSheet.create({
 
   saveButtonText: {
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "900",
     color: Colors.text,
   },
 });

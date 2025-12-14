@@ -26,6 +26,13 @@ export default function StaffTabsLayout() {
           ),
         }}
       />
+       <Tabs.Screen
+        name="employee-children"
+       options={{
+       href: null,
+       }}
+        />
+
 
       <Tabs.Screen
         name="employee-posts"
@@ -76,5 +83,6 @@ export default function StaffTabsLayout() {
         }}
       />
     </Tabs>
+    
   );
 }

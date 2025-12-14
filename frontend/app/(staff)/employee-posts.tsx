@@ -1,5 +1,14 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
+import { PostsStyles } from "@/styles";
 
 export default function BlogScreen() {
   const router = useRouter();
@@ -36,97 +45,40 @@ export default function BlogScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container}>
-      
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backIcon}>←</Text>
+    <ScrollView
+      style={PostsStyles.screen}
+      contentContainerStyle={PostsStyles.container}
+    >
+      {/* Back */}
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={PostsStyles.backButton}
+      >
+        <Ionicons name="chevron-back" size={26} />
       </TouchableOpacity>
 
-      <Text style={styles.title}>Blogg</Text>
+      <Text style={PostsStyles.title}>Blogg</Text>
 
       {posts.map((post) => (
         <TouchableOpacity
           key={post.id}
-          style={styles.card}
+          style={PostsStyles.card}
+          activeOpacity={0.85}
           onPress={() => router.push(`/blog/${post.id}`)}
         >
-          <Image source={post.image} style={styles.image} />
+          <Image source={post.image} style={PostsStyles.image} />
 
-          <View style={styles.textContainer}>
-            <Text style={styles.date}>{post.titleDate}</Text>
+          <View style={PostsStyles.textContainer}>
+            <Text style={PostsStyles.date}>{post.titleDate}</Text>
 
-            <Text style={styles.description} numberOfLines={4}>
+            <Text style={PostsStyles.description} numberOfLines={4}>
               {post.text}
             </Text>
 
-            <Text style={styles.arrow}>➜</Text>
+            <Text style={PostsStyles.arrow}>➜</Text>
           </View>
         </TouchableOpacity>
       ))}
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 50, 
-    backgroundColor: "#FFFFFF",
-  },
-  backButton: {
-    position: "absolute",
-    top: 0,
-    left: 16,
-    zIndex: 10,
-    padding: 5,
-  },
-  backIcon: {
-    fontSize: 30,
-    color: "black",
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 25,
-  },
-
-  card: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#BACEFF",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-    backgroundColor: "#F8FAFF",
-  },
-
-  image: {
-    width: 110,
-    height: 110,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-
-  textContainer: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-
-  date: {
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-
-  description: {
-    fontSize: 14,
-  },
-
-  arrow: {
-    alignSelf: "flex-end",
-    marginTop: 8,
-    fontSize: 18,
-  },
-});

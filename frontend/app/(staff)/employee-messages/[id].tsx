@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { AppStyles, InputStyles, ChatStyles } from "@/styles";
+import { ChatStyles } from "@/styles";
 
 type Message = {
   id: string;
@@ -27,62 +27,42 @@ type Thread = {
   messages: Message[];
 };
 
-// Mock – dere skal bruke mock + local storage
-const THREADS: Record<string, Thread> = {
-  "1": {
-    id: "1",
-    name: "Ola Hansen",
-    subtitle: "Far til Stian i avdeling Bjørn",
-    messages: [
-      { id: "m1", from: "parent", text: "Hei! Vi finner ikke den blå lua..." },
-      { id: "m2", from: "staff", text: "Hei Ola! Takk for beskjed. Vi sjekker i morgen tidlig 😊" },
-      { id: "m3", from: "parent", text: "Tusen takk! Det setter vi pris på" },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Simon",
-    subtitle: "Foresatt",
-    messages: [{ id: "m1", from: "parent", text: "Hei! Kan dere si ifra om Simon har spist i dag?" }],
-  },
-  "3": {
-    id: "3",
-    name: "Pia",
-    subtitle: "Foresatt",
-    messages: [{ id: "m1", from: "parent", text: "Hei! Pia blir hentet litt tidligere i dag." }],
-  },
-};
-
 export default function EmployeeChat() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
 
+  const THREADS: Record<string, Thread> = {
+    "1": {
+      id: "1",
+      name: "Ola Hansen",
+      subtitle: "Foresatt til Stian • Avdeling Bjørn",
+      messages: [],
+    },
+  };
+
   const threadId = typeof params.id === "string" ? params.id : "1";
-  const thread = useMemo(() => THREADS[threadId] ?? THREADS["1"], [threadId]);
+  const thread = useMemo(
+    () => THREADS[threadId] ?? THREADS["1"],
+    [threadId]
+  );
+
   const storageKey = `chat_staff_${threadId}`;
 
   const [messages, setMessages] = useState<Message[]>(thread.messages);
   const [input, setInput] = useState("");
 
+  function handleBack() {
+    router.replace("/(staff)/employee-messages");
+  }
+
   useEffect(() => {
     async function loadMessages() {
       const stored = await AsyncStorage.getItem(storageKey);
-  
-      if (stored) {
-        const parsed: Message[] = JSON.parse(stored);
-
-        if (parsed.length > 0) {
-          setMessages(parsed);
-          return;
-        }
-      }
-
-      setMessages(thread.messages);
+      if (stored) setMessages(JSON.parse(stored));
     }
-  
     loadMessages();
-  }, [storageKey, thread.messages]);
-  
+  }, [storageKey]);
+
   async function sendMessage() {
     const trimmed = input.trim();
     if (!trimmed) return;
@@ -102,14 +82,14 @@ export default function EmployeeChat() {
 
   return (
     <KeyboardAvoidingView
-      style={AppStyles.screen}
+      style={ChatStyles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} // tabbar-offset
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <View style={AppStyles.container}>
+      <View style={ChatStyles.container}>
         {/* Header */}
         <View style={ChatStyles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={handleBack}>
             <Ionicons name="chevron-back" size={26} />
           </TouchableOpacity>
 
@@ -133,13 +113,17 @@ export default function EmployeeChat() {
                 key={msg.id}
                 style={[
                   ChatStyles.bubble,
-                  isStaff ? ChatStyles.staffBubble : ChatStyles.parentBubble,
+                  isStaff
+                    ? ChatStyles.staffBubble
+                    : ChatStyles.parentBubble,
                 ]}
               >
                 <Text
                   style={[
                     ChatStyles.bubbleText,
-                    isStaff ? ChatStyles.staffText : ChatStyles.parentText,
+                    isStaff
+                      ? ChatStyles.staffText
+                      : ChatStyles.parentText,
                   ]}
                 >
                   {msg.text}
@@ -152,7 +136,7 @@ export default function EmployeeChat() {
         {/* Input */}
         <View style={ChatStyles.inputRow}>
           <TextInput
-            style={[InputStyles.input, ChatStyles.chatInput]}
+            style={ChatStyles.chatInput}
             placeholder="Skriv en melding..."
             value={input}
             onChangeText={setInput}
@@ -160,7 +144,10 @@ export default function EmployeeChat() {
             onSubmitEditing={sendMessage}
           />
 
-          <TouchableOpacity style={ChatStyles.sendButton} onPress={sendMessage}>
+          <TouchableOpacity
+            style={ChatStyles.sendButton}
+            onPress={sendMessage}
+          >
             <Ionicons name="arrow-forward" size={20} color="white" />
           </TouchableOpacity>
         </View>

@@ -1,9 +1,15 @@
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
 
-import { AppStyles, ButtonStyles, CheckinStyles } from "@/styles";
+import { ParentCheckinStyles } from "@/styles";
 import { checkerApi } from "../services/checkerApi";
 import type { PersonType } from "../services/types/checker";
 
@@ -20,7 +26,7 @@ const MOCK_PARENT_ID = "parent-id";
 const MOCK_PARENT_NAME = "Ola Hansen";
 
 const MOCK_CHILDREN: Child[] = [
-  { id: "edith-id", name: "Edith" }, 
+  { id: "edith-id", name: "Edith" },
 ];
 
 function statusKey(childId: string) {
@@ -32,18 +38,17 @@ function timeKey(childId: string) {
 
 function formatNowForDisplay(): string {
   const now = new Date();
-  return now.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  return now.toLocaleTimeString("nb-NO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function CheckinScreen() {
   const router = useRouter();
 
-  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-
-  // status per barn
   const [statusMap, setStatusMap] = useState<Record<string, CheckStatus>>({});
   const [timeMap, setTimeMap] = useState<Record<string, string | null>>({});
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,13 +99,12 @@ export default function CheckinScreen() {
         droppedOffBy: MOCK_PARENT_ID,
         droppedOffPersonType: PARENT_PERSON_TYPE,
         droppedOffPersonName: MOCK_PARENT_NAME,
-        droppedOffConfirmedBy: null, 
+        droppedOffConfirmedBy: null,
         notes: null,
       });
 
       await updateLocal(child.id, "INN");
-      setSelectedChild(null);
-    } catch (e: any) {
+    } catch (e) {
       console.log("Feil ved check-in:", e);
       setError("Kunne ikke registrere levering. Prøv igjen.");
     } finally {
@@ -118,14 +122,13 @@ export default function CheckinScreen() {
         pickedUpBy: MOCK_PARENT_ID,
         pickedUpPersonType: PARENT_PERSON_TYPE,
         pickedUpPersonName: MOCK_PARENT_NAME,
-        pickedUpConfirmedBy: null, 
-        pickedUpConfirmed: false, 
+        pickedUpConfirmedBy: null,
+        pickedUpConfirmed: false,
         notes: null,
       });
 
       await updateLocal(child.id, "UT");
-      setSelectedChild(null);
-    } catch (e: any) {
+    } catch (e) {
       console.log("Feil ved check-out:", e);
       setError("Kunne ikke registrere henting. Prøv igjen.");
     } finally {
@@ -143,101 +146,126 @@ export default function CheckinScreen() {
   }
 
   return (
-    <View style={AppStyles.screen}>
-      <View style={CheckinStyles.container}>
-        <View style={CheckinStyles.topRow}>
+    <View style={ParentCheckinStyles.safeArea}>
+      <ScrollView contentContainerStyle={ParentCheckinStyles.scrollContent}>
+        {/* Header */}
+        <View style={ParentCheckinStyles.headerRow}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={AppStyles.text}>←</Text>
+            <Ionicons name="chevron-back" size={26} />
           </TouchableOpacity>
 
-          <Text style={CheckinStyles.title}>Sjekk inn / ut</Text>
-          <View />
+          <Text style={ParentCheckinStyles.headerTitle}>
+            Sjekk inn / ut
+          </Text>
+
+          <View style={{ width: 26 }} />
         </View>
 
+        <Text style={ParentCheckinStyles.subtitle}>
+          Velg barn og registrer levering eller henting.
+        </Text>
+
         {error && (
-          <View style={AppStyles.cardWhite}>
-            <Text style={AppStyles.text}>{error}</Text>
+          <View style={ParentCheckinStyles.errorCard}>
+            <Text style={ParentCheckinStyles.errorText}>{error}</Text>
           </View>
         )}
 
-        <ScrollView contentContainerStyle={CheckinStyles.grid}>
-          {MOCK_CHILDREN.map((child) => (
-            <TouchableOpacity
-              key={child.id}
-              style={CheckinStyles.childCard}
-              onPress={() => setSelectedChild(child)}
-              activeOpacity={0.85}
-            >
-              <View style={CheckinStyles.avatarCircle}>
-                <Text style={CheckinStyles.avatarInitial}>
-                  {child.name.slice(0, 1).toUpperCase()}
+        {MOCK_CHILDREN.map((child) => {
+          const s = statusMap[child.id] ?? "NONE";
+          const isIn = s === "INN";
+          const isOut = s === "UT";
+
+          return (
+            <View key={child.id} style={ParentCheckinStyles.childCard}>
+              <Text style={ParentCheckinStyles.childTitle}>Barn</Text>
+
+              <View style={ParentCheckinStyles.childHeaderRow}>
+                <Text style={ParentCheckinStyles.childName}>
+                  {child.name}
                 </Text>
+
+                {(isIn || isOut) && (
+                  <View
+                    style={[
+                      ParentCheckinStyles.statusPill,
+                      isIn
+                        ? ParentCheckinStyles.statusPillIn
+                        : ParentCheckinStyles.statusPillOut,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        ParentCheckinStyles.statusDot,
+                        isIn
+                          ? ParentCheckinStyles.statusDotIn
+                          : ParentCheckinStyles.statusDotOut,
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        ParentCheckinStyles.statusText,
+                        isIn
+                          ? ParentCheckinStyles.statusTextIn
+                          : ParentCheckinStyles.statusTextOut,
+                      ]}
+                    >
+                      {isIn ? "Levert" : "Hentet"}
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              <Text style={CheckinStyles.childName}>{child.name}</Text>
-              <Text style={CheckinStyles.statusLabel}>{statusLabel(child.id)}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              <Text style={ParentCheckinStyles.lastChangeText}>
+                {statusLabel(child.id)}
+              </Text>
 
-        {!!selectedChild && (
-          <View style={CheckinStyles.overlay}>
-            <View style={CheckinStyles.popupCard}>
-              <View style={CheckinStyles.popupHeaderRow}>
-                <Text style={CheckinStyles.popupName}>{selectedChild.name}</Text>
-
-                <TouchableOpacity onPress={() => setSelectedChild(null)}>
-                  <Text style={AppStyles.text}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={CheckinStyles.popupAvatarCircle}>
-                <Text style={CheckinStyles.popupAvatarInitial}>
-                  {selectedChild.name.slice(0, 1).toUpperCase()}
+              <TouchableOpacity
+                style={[
+                  ParentCheckinStyles.checkButton,
+                  ParentCheckinStyles.checkButtonIn,
+                ]}
+                onPress={() => handleCheckIn(child)}
+                disabled={loading}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    ParentCheckinStyles.checkButtonText,
+                    ParentCheckinStyles.checkButtonTextIn,
+                  ]}
+                >
+                  {loading ? "Lagrer..." : "Lever"}
                 </Text>
-              </View>
+              </TouchableOpacity>
 
-              <View style={CheckinStyles.popupButtons}>
-                <TouchableOpacity
-                  style={[ButtonStyles.base, ButtonStyles.primary]}
-                  onPress={() => handleCheckIn(selectedChild)}
-                  disabled={loading}
-                  activeOpacity={0.85}
+              <TouchableOpacity
+                style={[
+                  ParentCheckinStyles.checkButton,
+                  ParentCheckinStyles.checkButtonOut,
+                ]}
+                onPress={() => handleCheckOut(child)}
+                disabled={loading}
+                activeOpacity={0.85}
+              >
+                <Text
+                  style={[
+                    ParentCheckinStyles.checkButtonText,
+                    ParentCheckinStyles.checkButtonTextOut,
+                  ]}
                 >
-                  <Text style={ButtonStyles.textDark}>
-                    {loading ? "Lagrer..." : "Lever"}
-                  </Text>
-                </TouchableOpacity>
+                  {loading ? "Lagrer..." : "Hent"}
+                </Text>
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[ButtonStyles.base, ButtonStyles.danger]}
-                  onPress={() => handleCheckOut(selectedChild)}
-                  disabled={loading}
-                  activeOpacity={0.85}
-                >
-                  <Text style={ButtonStyles.textLight}>
-                    {loading ? "Lagrer..." : "Hent"}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[ButtonStyles.base, ButtonStyles.neutral]}
-                  onPress={() => setSelectedChild(null)}
-                  disabled={loading}
-                  activeOpacity={0.85}
-                >
-                  <Text style={ButtonStyles.textDark}>Avbryt</Text>
-                </TouchableOpacity>
-              </View>
-
-              <Text style={AppStyles.textMuted}>
-                Foreldre registrerer levering/henting. Ansatt kan senere bekrefte i
-                ansatt-appen når dere kobler begge til samme backend.
+              <Text style={ParentCheckinStyles.infoText}>
+                Foreldre registrerer levering/henting. Ansatt kan senere
+                bekrefte i ansatt-appen.
               </Text>
             </View>
-          </View>
-        )}
-      </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }

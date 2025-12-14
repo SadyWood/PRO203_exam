@@ -1,6 +1,20 @@
 import { StyleSheet } from "react-native";
+import { Colors } from "@/constants/colors";
 
 export const ChatStyles = StyleSheet.create({
+  /* Screen + container (erstatter AppStyles) */
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+
+  /* Header */
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -14,20 +28,23 @@ export const ChatStyles = StyleSheet.create({
 
   name: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
     textAlign: "center",
+    color: Colors.text,
   },
 
   subtitle: {
     fontSize: 12,
-    opacity: 0.6,
+    opacity: 0.55,
     textAlign: "center",
     marginTop: 2,
+    color: Colors.text,
   },
 
+  /* Messages */
   messagesBox: {
     flex: 1,
-    marginTop: 12,
+    marginTop: 10,
   },
 
   messagesContent: {
@@ -38,10 +55,10 @@ export const ChatStyles = StyleSheet.create({
 
   bubble: {
     maxWidth: "78%",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 16,
-    marginVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 18,
+    marginVertical: 5,
   },
 
   staffBubble: {
@@ -51,17 +68,18 @@ export const ChatStyles = StyleSheet.create({
 
   parentBubble: {
     alignSelf: "flex-start",
-    backgroundColor: "#E9EDF5",
+    backgroundColor: "#EEF2FF",
   },
 
   bubbleText: {
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 
   staffText: { color: "white" },
-  parentText: { color: "#111" },
+  parentText: { color: "#111827" },
 
+  /* Input */
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -69,19 +87,27 @@ export const ChatStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
   },
 
   chatInput: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 46,
     borderRadius: 999,
     paddingHorizontal: 14,
+    backgroundColor: "#F3F4F6",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    fontSize: 15,
+    color: Colors.text,
   },
 
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#4A6CF7",

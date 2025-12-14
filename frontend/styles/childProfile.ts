@@ -1,14 +1,66 @@
 import { StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
+import { Shadows } from "./shadows";
 
 export const ChildProfileStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  
+  container: {
+    padding: 20,
+    paddingBottom: 40,
+    width: "100%",
+    maxWidth: 500,
+    alignSelf: "center",
+  },
+  
+  text: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  
+  textMuted: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    marginBottom: 10,
+    color: Colors.text,
+  },
+  
+  btnBase: {
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    marginTop: 14,
+  },
+  
+  btnNeutral: {
+    backgroundColor: "#E5E7EB",
+  },
+  
+  btnTextDark: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  
   headerCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
     padding: 14,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    ...Shadows.card,
   },
 
   avatar: {
@@ -24,43 +76,50 @@ export const ChildProfileStyles = StyleSheet.create({
 
   name: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "800",
     color: Colors.text,
     marginBottom: 6,
   },
 
   dateChip: {
     alignSelf: "flex-start",
-    backgroundColor: "#fff",
+    backgroundColor: "#EEF2FF",
     borderRadius: 999,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
 
   dateText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "800",
     color: Colors.text,
   },
 
   sectionBox: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    ...Shadows.soft,
   },
 
   permissionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    paddingVertical: 6,
   },
 
   listItem: {
-    backgroundColor: "#fff",
-    borderRadius: 6,
-    padding: 8,
-    marginBottom: 6,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
   },
 });

@@ -1,14 +1,9 @@
-import {
-  View,
-  Text,
-  ScrollView,
-} from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useState } from "react";
 
 import { EmployeeHomeStyles } from "@/styles";
-import { AppButton } from "@/components/AppButton";
 
 const CHECKIN_STORAGE_KEY = "employee_checkin_statuses_bjorn";
 
@@ -62,75 +57,49 @@ export default function EmployeeHomeScreen() {
     }, [loadStatuses])
   );
 
-  /**
-   * TODO (BACKEND):
-   * - Disse verdiene bør komme ferdig aggregert fra backend
-   * - Alternativt: hent alle barn med status og tell i frontend
-   */
-  const presentCount = Object.values(statuses).filter(
-    (s) => s.status === "INN"
-  ).length;
-
-  const pickedUpCount = Object.values(statuses).filter(
-    (s) => s.status === "HENTET"
-  ).length;
-
-  const sickCount = Object.values(statuses).filter(
-    (s) => s.status === "SYK"
-  ).length;
-
-  const vacationCount = Object.values(statuses).filter(
-    (s) => s.status === "FERIE"
-  ).length;
+  const presentCount = Object.values(statuses).filter((s) => s.status === "INN").length;
+  const pickedUpCount = Object.values(statuses).filter((s) => s.status === "HENTET").length;
+  const sickCount = Object.values(statuses).filter((s) => s.status === "SYK").length;
+  const vacationCount = Object.values(statuses).filter((s) => s.status === "FERIE").length;
 
   return (
     <ScrollView contentContainerStyle={EmployeeHomeStyles.scrollContent}>
-
-      <Text style={EmployeeHomeStyles.bhgTitle}>
-        Eventyrhagen Barnehage
-      </Text>
+      <Text style={EmployeeHomeStyles.bhgTitle}>Eventyrhagen Barnehage</Text>
 
       <View style={EmployeeHomeStyles.employeeCard}>
-        <Text style={EmployeeHomeStyles.employeeGreeting}>
-          Hei {MOCK_EMPLOYEE.name}!
-        </Text>
-        <Text style={EmployeeHomeStyles.employeeSub}>
-          {MOCK_EMPLOYEE.department}
-        </Text>
+        <Text style={EmployeeHomeStyles.employeeGreeting}>Hei {MOCK_EMPLOYEE.name}!</Text>
+        <Text style={EmployeeHomeStyles.employeeSub}>{MOCK_EMPLOYEE.department}</Text>
       </View>
 
-      {/* Hurtigknapper */}
       <View style={EmployeeHomeStyles.quickActionsRow}>
-        <AppButton
-          label="Registrer fravær"
-          variant="danger"
-          onPress={() => {
-            // TODO (BACKEND):
-            // Naviger til fraværsregistrering når API er klart
-          }}
-        />
+        <Pressable
+          style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnNeutral]}
+        >
+          <Text style={EmployeeHomeStyles.primaryBtnText}>Bleieskift & søvn</Text>
+        </Pressable>
 
-        <AppButton
-          label="Bleieskift & søvn"
-          variant="neutral"
-          onPress={() => {
-            // TODO (BACKEND):
-            // Naviger til logg for bleieskift/søvn
-          }}
-        />
-
-        <AppButton
-          label="Meldinger"
+        <Pressable
+          style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnPrimary]}
           onPress={() => router.push("/(staff)/employee-messages")}
-        />
+        >
+          <Text style={EmployeeHomeStyles.primaryBtnText}>Meldinger</Text>
+        </Pressable>
 
-        <AppButton
-          label="Sjekk inn / ut"
+        <Pressable
+          style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnPrimary]}
+          onPress={() => router.push("/(staff)/employee-children")}
+        >
+          <Text style={EmployeeHomeStyles.primaryBtnText}>Se avdelingen liste</Text>
+        </Pressable>
+
+        <Pressable
+          style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnPrimary]}
           onPress={() => router.push("/(staff)/employee-checkin")}
-        />
+        >
+          <Text style={EmployeeHomeStyles.primaryBtnText}>Sjekk inn / ut</Text>
+        </Pressable>
       </View>
 
-      {/* Status */}
       <View style={EmployeeHomeStyles.statusCard}>
         <Text style={EmployeeHomeStyles.statusTitle}>
           Status for {MOCK_EMPLOYEE.department}
@@ -173,7 +142,6 @@ export default function EmployeeHomeScreen() {
         </View>
       </View>
 
-      {/* Agenda */}
       {MOCK_AGENDA.map((agenda) => (
         <View key={agenda.title} style={EmployeeHomeStyles.agendaCard}>
           <Text style={EmployeeHomeStyles.agendaTitle}>{agenda.title}</Text>
@@ -187,7 +155,6 @@ export default function EmployeeHomeScreen() {
           </View>
         </View>
       ))}
-
     </ScrollView>
   );
 }

@@ -1,11 +1,21 @@
-import { View, Text, Image, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+
 import { ParentProfileStyles } from "@/styles";
-import { AppButton } from "@/components/AppButton";
 import { fetchCurrentUser, logout } from "../../services/authApi";
 
+// TODO (BACKEND):
+// Erstatt `any` med faktisk bruker-type når backend-kontrakt er klar
+// f.eks. interface CurrentUser { id, fullName, email, phoneNumber, address, children, coParent }
 type CurrentUser = any;
 
 export default function ProfileScreen() {
@@ -13,6 +23,11 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
+     // TODO (BACKEND):
+    // fetchCurrentUser() skal hente komplett profil:
+    // - personlig info
+    // - barn
+    // - medforelder
     fetchCurrentUser()
       .then(setUser)
       .catch((err) => {
@@ -20,20 +35,22 @@ export default function ProfileScreen() {
       });
   }, []);
 
-  // Fallback-verdier
+// TODO (BACKEND):
+  // Fjern fallback-verdier når backend alltid returnerer disse feltene
   const displayName = user?.fullName ?? "Ola Hansen";
   const email = user?.email ?? "olahansen@gmail.com";
   const phone = user?.phoneNumber ?? "+47 123 45 678";
   const address = user?.address ?? "Adresse ikke registrert";
 
-  // TODO (BACKEND): barna skal komme fra backend
+  // TODO (BACKEND):
+  // children og coParent skal komme fra backend (f.eks. user.children / user.coParent)
+  // Disse mockene skal slettes når API er klart
   const children = [{ id: "edith-id", name: "Edith Hansen" }];
-
-  // TODO (BACKEND): medforelder skal komme fra backend
   const coParent = { id: "kari-id", name: "Kari Mette Hansen" };
 
   return (
     <ScrollView style={ParentProfileStyles.container}>
+      {/* Profilkort */}
       <View style={ParentProfileStyles.profileCard}>
         <Image
           source={{ uri: "https://randomuser.me/api/portraits/boy/32.jpg" }}
@@ -46,7 +63,9 @@ export default function ProfileScreen() {
 
       {/* Kontaktinfo */}
       <View style={ParentProfileStyles.section}>
-        <Text style={ParentProfileStyles.sectionTitle}>Kontaktinformasjon</Text>
+        <Text style={ParentProfileStyles.sectionTitle}>
+          Kontaktinformasjon
+        </Text>
 
         <View style={ParentProfileStyles.infoBox}>
           <View style={ParentProfileStyles.infoRow}>
@@ -78,11 +97,17 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ marginTop: 10 }}>
-          <AppButton
-            label="Rediger info"
-            variant="neutral"
+          <Pressable
+            style={[
+              ParentProfileStyles.primaryBtn,
+              ParentProfileStyles.primaryBtnNeutral,
+            ]}
             onPress={() => router.push("/edit-profile")}
-          />
+          >
+            <Text style={ParentProfileStyles.primaryBtnText}>
+              Rediger info
+            </Text>
+          </Pressable>
         </View>
       </View>
 
@@ -107,15 +132,19 @@ export default function ProfileScreen() {
         <Text style={ParentProfileStyles.sectionTitle}>Medforelder</Text>
 
         <TouchableOpacity style={ParentProfileStyles.childItem}>
-          <Text style={ParentProfileStyles.childName}>{coParent.name}</Text>
+          <Text style={ParentProfileStyles.childName}>
+            {coParent.name}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Logout */}
+      {/* Logg ut */}
       <View style={ParentProfileStyles.section}>
-        <AppButton
-          label="Logg ut"
-          variant="danger"
+        <Pressable
+          style={[
+            ParentProfileStyles.primaryBtn,
+            ParentProfileStyles.primaryBtnDanger,
+          ]}
           onPress={async () => {
             try {
               await logout();
@@ -125,7 +154,16 @@ export default function ProfileScreen() {
               router.replace("/");
             }
           }}
-        />
+        >
+          <Text
+            style={[
+              ParentProfileStyles.primaryBtnText,
+              ParentProfileStyles.primaryBtnTextDanger,
+            ]}
+          >
+            Logg ut
+          </Text>
+        </Pressable>
       </View>
     </ScrollView>
   );

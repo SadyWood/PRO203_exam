@@ -1,32 +1,31 @@
 import { StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
-import { Shadows } from "./shadows";
 
 export const EmployeeProfileStyles = StyleSheet.create({
+  /* Layout */
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: Colors.background,
+    padding: 20,
   },
 
+  /* Header */
   headerCard: {
-    borderRadius: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: "#D8D8D8",
     backgroundColor: "#FFFFFF",
-    ...Shadows.card,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.primaryLightBlue,
+    marginBottom: 20,
   },
 
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    marginRight: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    marginRight: 16,
   },
 
   headerRight: {
@@ -34,34 +33,64 @@ export const EmployeeProfileStyles = StyleSheet.create({
   },
 
   name: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-
-  sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    marginBottom: 12,
     color: Colors.text,
   },
 
+  /* Seksjoner */
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 8,
+    color: Colors.text,
+  },
+
+  /* Kontaktinfo */
   infoBox: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.primaryLightBlue,
+    padding: 14,
     marginBottom: 24,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
 
   infoText: {
-    fontSize: 16,
     marginLeft: 10,
+    fontSize: 14,
     color: Colors.text,
+  },
+
+  /* Knapper (samme mønster som employeeHome) */
+  primaryBtn: {
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  primaryBtnPrimary: {
+    backgroundColor: "#DBEAFE",
+  },
+
+  primaryBtnDanger: {
+    backgroundColor: "#FEE2E2",
+  },
+
+  primaryBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  primaryBtnTextDanger: {
+    color: "#B91C1C",
   },
 });

@@ -10,11 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
-import {
-  AppStyles,
-  ButtonStyles,
-  ChildProfileStyles,
-} from "@/styles";
+import { ChildProfileStyles } from "@/styles";
 
 type Child = {
   id: string;
@@ -50,24 +46,32 @@ export default function ChildProfileScreen() {
   const [child, setChild] = useState<Child | null>(null);
 
   useEffect(() => {
-    // TODO: childrenApi.getChildById(childId)
+    // TODO (BACKEND): childrenApi.getChildById(childId)
     setChild(MOCK_CHILDREN[childId] ?? null);
   }, [childId]);
 
   if (!child) {
     return (
-      <View style={AppStyles.screen}>
-        <View style={AppStyles.container}>
-          <Text style={AppStyles.text}>Fant ikke barn</Text>
+      <View style={ChildProfileStyles.screen}>
+        <View style={ChildProfileStyles.container}>
+          <Text style={ChildProfileStyles.text}>Fant ikke barn</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <ScrollView style={AppStyles.screen} contentContainerStyle={AppStyles.container}>
+    <ScrollView
+      style={ChildProfileStyles.screen}
+      contentContainerStyle={ChildProfileStyles.container}
+    >
       {/* Back */}
-      <TouchableOpacity onPress={() => router.replace("/profile")}>
+      <TouchableOpacity
+       onPress={() => { if (router.canGoBack()) { router.back();
+        } else {
+         router.replace("/profile");
+         }
+       }} >
         <Ionicons name="chevron-back" size={26} />
       </TouchableOpacity>
 
@@ -80,61 +84,86 @@ export default function ChildProfileScreen() {
         <View style={ChildProfileStyles.headerTextBox}>
           <Text style={ChildProfileStyles.name}>{child.name}</Text>
           <View style={ChildProfileStyles.dateChip}>
-            <Text style={ChildProfileStyles.dateText}>{child.birthDate}</Text>
+            <Text style={ChildProfileStyles.dateText}>
+              {child.birthDate}
+            </Text>
           </View>
         </View>
       </View>
 
+      {/* Avdeling */}
       <View style={ChildProfileStyles.sectionBox}>
-        <Text style={AppStyles.text}>Avdeling: {child.department}</Text>
+        <Text style={ChildProfileStyles.text}>
+          Avdeling: {child.department}
+        </Text>
       </View>
 
-      <Text style={AppStyles.sectionTitle}>Tillatelser</Text>
+      {/* Tillatelser */}
+      <Text style={ChildProfileStyles.sectionTitle}>Tillatelser</Text>
       <View style={ChildProfileStyles.sectionBox}>
         <View style={ChildProfileStyles.permissionRow}>
-          <Text style={AppStyles.text}>Deling av bilder</Text>
+          <Text style={ChildProfileStyles.text}>Deling av bilder</Text>
           <Switch value={child.sharePhotos} disabled />
         </View>
+
         <View style={ChildProfileStyles.permissionRow}>
-          <Text style={AppStyles.text}>Bli med på turer</Text>
+          <Text style={ChildProfileStyles.text}>Bli med på turer</Text>
           <Switch value={child.tripPermission} disabled />
         </View>
+
         <View style={ChildProfileStyles.permissionRow}>
-          <Text style={AppStyles.text}>Dele navn offentlig</Text>
+          <Text style={ChildProfileStyles.text}>
+            Dele navn offentlig
+          </Text>
           <Switch value={child.showNamePublic} disabled />
         </View>
       </View>
 
-      <Text style={AppStyles.sectionTitle}>Helsehensyn</Text>
+      {/* Helse */}
+      <Text style={ChildProfileStyles.sectionTitle}>Helsehensyn</Text>
       <View style={ChildProfileStyles.sectionBox}>
-        <Text style={AppStyles.text}>Matallergier</Text>
+        <Text style={ChildProfileStyles.text}>Matallergier</Text>
+
         {child.foodAllergies.length === 0 ? (
-          <Text style={AppStyles.textMuted}>Ingen registrert</Text>
+          <Text style={ChildProfileStyles.textMuted}>
+            Ingen registrert
+          </Text>
         ) : (
           child.foodAllergies.map((a) => (
             <View key={a} style={ChildProfileStyles.listItem}>
-              <Text style={AppStyles.text}>{a}</Text>
+              <Text style={ChildProfileStyles.text}>{a}</Text>
             </View>
           ))
         )}
 
-        <Text style={[AppStyles.text, { marginTop: 8 }]}>Annet</Text>
+        <Text style={[ChildProfileStyles.text, { marginTop: 8 }]}>
+          Annet
+        </Text>
+
         {child.otherHealth.length === 0 ? (
-          <Text style={AppStyles.textMuted}>Ingen registrert</Text>
+          <Text style={ChildProfileStyles.textMuted}>
+            Ingen registrert
+          </Text>
         ) : (
           child.otherHealth.map((h) => (
             <View key={h} style={ChildProfileStyles.listItem}>
-              <Text style={AppStyles.text}>{h}</Text>
+              <Text style={ChildProfileStyles.text}>{h}</Text>
             </View>
           ))
         )}
       </View>
 
+      {/* Rediger */}
       <TouchableOpacity
-        style={[ButtonStyles.base, ButtonStyles.neutral]}
+        style={[
+          ChildProfileStyles.btnBase,
+          ChildProfileStyles.btnNeutral,
+        ]}
         onPress={() => router.push(`/child/${childId}/edit`)}
       >
-        <Text style={ButtonStyles.textDark}>Rediger info</Text>
+        <Text style={ChildProfileStyles.btnTextDark}>
+          Rediger info
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );

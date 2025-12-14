@@ -1,14 +1,10 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { CheckinStyles } from "@/styles";
+import { EmployeeCheckinStyles } from "@/styles";
 import { checkerApi } from "../../services/checkerApi";
 import type { CheckerResponseDto } from "../../services/types/checker";
 
@@ -36,11 +32,32 @@ const CHILDREN: Child[] = [
   { id: "hakon-id", name: "HÅKON" },
 ];
 
+const CHECKIN_STORAGE_KEY = "employee_checkin_statuses_bjorn";
+
+/**
+ * TODO (BACKEND):
+ * - Avdelingen sin status bør komme fra backend (ikke AsyncStorage).
+ * - GET /api/staff/departments/{departmentId}/children/statuses
+ * - POST /api/staff/checkin (childId, status, timestamp, staffId)
+ * - Når dette er på plass: fjern CHECKIN_STORAGE_KEY + saveToLocalStorage.
+ */
+async function saveToLocalStorage(next: Record<string, ChildStatus>) {
+  try {
+    await AsyncStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // ignore for now
+  }
+}
+
 function formatTimeFromIso(iso?: string | null): string | undefined {
   if (!iso) return undefined;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return undefined;
-  return d.toLocaleTimeString("nb-NO", {
+  return d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+}
+
+function nowHHMM(): string {
+  return new Date().toLocaleTimeString("nb-NO", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -60,23 +77,23 @@ export default function EmployeeCheckinScreen() {
       const active: CheckerResponseDto[] = await checkerApi.getActive();
 
       setStatuses((prev) => {
-        const copy = { ...prev };
+        const copy: Record<string, ChildStatus> = { ...prev };
 
+        // Default: NONE for alle (med mindre vi setter INN fra API)
         CHILDREN.forEach((child) => {
-          if (!copy[child.id] || copy[child.id].status === "INN") {
-            copy[child.id] = { status: "NONE" };
-          }
+          if (!copy[child.id]) copy[child.id] = { status: "NONE" };
+          if (copy[child.id].status === "INN") copy[child.id] = { status: "NONE" };
         });
 
         active.forEach((record) => {
           copy[record.childId] = {
             status: "INN",
-            time: formatTimeFromIso(
-              record.checkInDate ?? record.initializedOn
-            ),
+            time: formatTimeFromIso(record.checkInDate ?? record.initializedOn),
           };
         });
 
+        // ✅ Sync til EmployeeHome/EmployeeChildren i frontend-demo
+        saveToLocalStorage(copy);
         return copy;
       });
     } finally {
@@ -103,62 +120,62 @@ export default function EmployeeCheckinScreen() {
   async function handleSetStatus(child: Child, status: CheckStatus) {
     setLoading(true);
     try {
-      if (status === "INN")
+      if (status === "INN") {
         await checkerApi.checkIn({ childId: child.id } as any);
+      }
 
-      if (status === "HENTET")
+      if (status === "HENTET") {
         await checkerApi.checkOut({ childId: child.id } as any);
+      }
+
+      // SYK/FERIE: ingen API-kall her enda (beholder eksisterende oppførsel)
     } finally {
-      setStatuses((prev) => ({
-        ...prev,
-        [child.id]: {
-          status,
-          time: new Date().toLocaleTimeString("nb-NO", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      }));
+      setStatuses((prev) => {
+        const next: Record<string, ChildStatus> = {
+          ...prev,
+          [child.id]: { status, time: nowHHMM() },
+        };
+
+        // ✅ Sync til EmployeeHome/EmployeeChildren i frontend-demo
+        saveToLocalStorage(next);
+
+        return next;
+      });
+
       setSelectedChild(null);
       setLoading(false);
     }
   }
 
   return (
-    <View style={CheckinStyles.container}>
-
+    <View style={EmployeeCheckinStyles.container}>
       {/* Header */}
-      <View style={CheckinStyles.topRow}>
+      <View style={EmployeeCheckinStyles.topRow}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} />
         </TouchableOpacity>
 
-        <Text style={CheckinStyles.title}>AVDELING BJØRN</Text>
+        <Text style={EmployeeCheckinStyles.title}>AVDELING BJØRN</Text>
 
         <TouchableOpacity onPress={loadFromApi}>
-          <Ionicons
-            name={loadingFromApi ? "sync" : "refresh"}
-            size={22}
-          />
+          <Ionicons name={loadingFromApi ? "sync" : "refresh"} size={22} />
         </TouchableOpacity>
       </View>
 
       {/* Grid */}
-      <ScrollView contentContainerStyle={CheckinStyles.grid}>
+      <ScrollView contentContainerStyle={EmployeeCheckinStyles.grid}>
         {CHILDREN.map((child) => (
           <TouchableOpacity
             key={child.id}
-            style={CheckinStyles.childCard}
+            style={EmployeeCheckinStyles.childCard}
             onPress={() => setSelectedChild(child)}
           >
-            <View style={CheckinStyles.avatarCircle}>
-              <Text style={CheckinStyles.avatarInitial}>
-                {child.name[0]}
-              </Text>
+            <View style={EmployeeCheckinStyles.avatarCircle}>
+              <Text style={EmployeeCheckinStyles.avatarInitial}>{child.name[0]}</Text>
             </View>
 
-            <Text style={CheckinStyles.childName}>{child.name}</Text>
-            <Text style={CheckinStyles.statusLabel}>
+            <Text style={EmployeeCheckinStyles.childName}>{child.name}</Text>
+            <Text style={EmployeeCheckinStyles.statusLabel}>
               {statusLabel(child.id)}
             </Text>
           </TouchableOpacity>
@@ -167,32 +184,30 @@ export default function EmployeeCheckinScreen() {
 
       {/* Popup */}
       {selectedChild && (
-        <View style={CheckinStyles.overlay}>
-          <View style={CheckinStyles.popupCard}>
-            <View style={CheckinStyles.popupHeaderRow}>
-              <Text style={CheckinStyles.popupName}>
-                {selectedChild.name}
-              </Text>
+        <View style={EmployeeCheckinStyles.overlay}>
+          <View style={EmployeeCheckinStyles.popupCard}>
+            <View style={EmployeeCheckinStyles.popupHeaderRow}>
+              <Text style={EmployeeCheckinStyles.popupName}>{selectedChild.name}</Text>
               <TouchableOpacity onPress={() => setSelectedChild(null)}>
                 <Ionicons name="close" size={22} />
               </TouchableOpacity>
             </View>
 
-            <View style={CheckinStyles.popupAvatarCircle}>
-              <Text style={CheckinStyles.popupAvatarInitial}>
+            <View style={EmployeeCheckinStyles.popupAvatarCircle}>
+              <Text style={EmployeeCheckinStyles.popupAvatarInitial}>
                 {selectedChild.name[0]}
               </Text>
             </View>
 
-            <View style={CheckinStyles.popupButtons}>
+            <View style={EmployeeCheckinStyles.popupButtons}>
               {(["INN", "SYK", "HENTET", "FERIE"] as CheckStatus[]).map((s) => (
                 <TouchableOpacity
                   key={s}
-                  style={CheckinStyles.popupButton}
+                  style={EmployeeCheckinStyles.popupButton}
                   onPress={() => handleSetStatus(selectedChild, s)}
                   disabled={loading}
                 >
-                  <Text style={CheckinStyles.popupButtonText}>
+                  <Text style={EmployeeCheckinStyles.popupButtonText}>
                     Registrer {s.toLowerCase()}
                   </Text>
                 </TouchableOpacity>
@@ -201,7 +216,6 @@ export default function EmployeeCheckinScreen() {
           </View>
         </View>
       )}
-
     </View>
   );
 }

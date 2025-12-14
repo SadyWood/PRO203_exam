@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
-import { EditChildStyles } from "@/styles";
+import { ChildEditStyles } from "@/styles";
 
 type ChildForm = {
   name: string;
@@ -44,6 +44,9 @@ export default function EditChildScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+   // TODO (BACKEND):
+  // Flytt MOCK_CHILDREN ut av komponenten (eller fjern helt) når backend er klar.
+ // Data skal hentes fra API basert på childId, f.eks. childrenApi.getChild(childId)
 
   const MOCK_CHILDREN: Record<string, ChildForm> = {
     "edith-id": {
@@ -65,6 +68,11 @@ export default function EditChildScreen() {
     const mock = MOCK_CHILDREN[childId];
     if (mock) setForm(mock);
     else setForm((p) => ({ ...p, name: `Barn (${childId})` }));
+    // TODO (BACKEND):
+      // 1) Hent barnets detaljer:
+  // const child = await childrenApi.getChild(childId)
+   // 2) Map API-respons til ChildForm
+    // 3) Håndter feil (401/403/404) og sett error-melding
 
     setLoading(false);
   }, [childId]);
@@ -89,72 +97,86 @@ export default function EditChildScreen() {
   }
 
   return (
-    <ScrollView style={EditChildStyles.screen} contentContainerStyle={{ paddingBottom: 32 }}>
+    <ScrollView
+      style={ChildEditStyles.screen}
+      contentContainerStyle={ChildEditStyles.scrollContent}
+    >
       <TouchableOpacity
-        style={EditChildStyles.backButton}
+        style={ChildEditStyles.backButton}
         onPress={() => router.replace(`/child/${childId}`)}
       >
         <Ionicons name="chevron-back" size={26} />
       </TouchableOpacity>
 
-      <Text style={EditChildStyles.title}>
+      <Text style={ChildEditStyles.title}>
         {loading ? "Laster..." : `Rediger ${form.name || "barn"}`}
       </Text>
 
-      <View style={EditChildStyles.card}>
-        <Text style={EditChildStyles.label}>Navn</Text>
+      <View style={ChildEditStyles.card}>
+        <Text style={ChildEditStyles.label}>Navn</Text>
         <TextInput
-          style={EditChildStyles.input}
+          style={ChildEditStyles.input}
           value={form.name}
           onChangeText={(t) => update("name", t)}
         />
 
-        <Text style={EditChildStyles.label}>Fødselsdato</Text>
+        <Text style={ChildEditStyles.label}>Fødselsdato</Text>
         <TextInput
-          style={EditChildStyles.input}
+          style={ChildEditStyles.input}
           value={form.birthDate}
           onChangeText={(t) => update("birthDate", t)}
         />
 
-        <Text style={EditChildStyles.label}>Avdeling</Text>
+        <Text style={ChildEditStyles.label}>Avdeling</Text>
         <TextInput
-          style={EditChildStyles.input}
+          style={ChildEditStyles.input}
           value={form.department}
           onChangeText={(t) => update("department", t)}
         />
       </View>
 
-      <Text style={EditChildStyles.sectionTitle}>Tillatelser</Text>
-      <View style={EditChildStyles.card}>
-        <View style={EditChildStyles.switchRow}>
-          <Text style={EditChildStyles.switchLabel}>Deling av bilder</Text>
-          <Switch value={form.sharePhotos} onValueChange={(v) => update("sharePhotos", v)} />
+      <Text style={ChildEditStyles.sectionTitle}>Tillatelser</Text>
+      <View style={ChildEditStyles.card}>
+        <View style={ChildEditStyles.switchRow}>
+          <Text style={ChildEditStyles.switchLabel}>Deling av bilder</Text>
+          <Switch
+            value={form.sharePhotos}
+            onValueChange={(v) => update("sharePhotos", v)}
+          />
         </View>
 
-        <View style={EditChildStyles.switchRow}>
-          <Text style={EditChildStyles.switchLabel}>Bli med på turer</Text>
-          <Switch value={form.tripPermission} onValueChange={(v) => update("tripPermission", v)} />
+        <View style={ChildEditStyles.switchRow}>
+          <Text style={ChildEditStyles.switchLabel}>Bli med på turer</Text>
+          <Switch
+            value={form.tripPermission}
+            onValueChange={(v) => update("tripPermission", v)}
+          />
         </View>
 
-        <View style={EditChildStyles.switchRow}>
-          <Text style={EditChildStyles.switchLabel}>Dele barnets navn offentlig</Text>
-          <Switch value={form.showNamePublic} onValueChange={(v) => update("showNamePublic", v)} />
+        <View style={ChildEditStyles.switchRow}>
+          <Text style={ChildEditStyles.switchLabel}>
+            Dele barnets navn offentlig
+          </Text>
+          <Switch
+            value={form.showNamePublic}
+            onValueChange={(v) => update("showNamePublic", v)}
+          />
         </View>
       </View>
 
-      <Text style={EditChildStyles.sectionTitle}>Helsehensyn</Text>
-      <View style={EditChildStyles.card}>
-        <Text style={EditChildStyles.label}>Matallergier</Text>
+      <Text style={ChildEditStyles.sectionTitle}>Helsehensyn</Text>
+      <View style={ChildEditStyles.card}>
+        <Text style={ChildEditStyles.label}>Matallergier</Text>
         <TextInput
-          style={[EditChildStyles.input, EditChildStyles.multilineInput]}
+          style={[ChildEditStyles.input, ChildEditStyles.multilineInput]}
           value={form.foodAllergies}
           onChangeText={(t) => update("foodAllergies", t)}
           multiline
         />
 
-        <Text style={EditChildStyles.label}>Annet</Text>
+        <Text style={ChildEditStyles.label}>Annet</Text>
         <TextInput
-          style={[EditChildStyles.input, EditChildStyles.multilineInput]}
+          style={[ChildEditStyles.input, ChildEditStyles.multilineInput]}
           value={form.otherHealth}
           onChangeText={(t) => update("otherHealth", t)}
           multiline
@@ -162,20 +184,20 @@ export default function EditChildScreen() {
       </View>
 
       {error && (
-        <View style={EditChildStyles.errorBox}>
-          <Text style={EditChildStyles.errorText}>{error}</Text>
+        <View style={ChildEditStyles.errorBox}>
+          <Text style={ChildEditStyles.errorText}>{error}</Text>
         </View>
       )}
 
       <TouchableOpacity
         style={[
-          EditChildStyles.saveButton,
-          (saving || loading) && EditChildStyles.saveButtonDisabled,
+          ChildEditStyles.saveButton,
+          (saving || loading) && ChildEditStyles.saveButtonDisabled,
         ]}
         onPress={handleSave}
         disabled={saving || loading}
       >
-        <Text style={EditChildStyles.saveButtonText}>
+        <Text style={ChildEditStyles.saveButtonText}>
           {saving ? "Lagrer..." : "Lagre"}
         </Text>
       </TouchableOpacity>

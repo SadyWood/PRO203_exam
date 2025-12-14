@@ -1,8 +1,8 @@
-import { View,Text, StyleSheet,ScrollView,TouchableOpacity,} from "react-native";
-import { Colors } from "@/constants/colors";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 
-// TODO: Bytt ut MOCK_THREADS med data fra backend (f.eks. messagesApi.getThreadsForCurrentUser())
+import { ParentMessagesStyles } from "@/styles";
+
 const MOCK_THREADS = [
   {
     id: "1",
@@ -31,108 +31,54 @@ const MOCK_THREADS = [
 export default function MessagesScreen() {
   const router = useRouter();
 
-  // TODO: Når backend er klar, hent tråder i useEffect:
-  // const [threads, setThreads] = useState<ThreadSummary[]>([]);
-  // useEffect(() => {
-  //   messagesApi.getThreadsForCurrentUser().then(setThreads).catch(console.error);
-  // }, []);
-
   return (
-    <View style={styles.container}>
-      {/* Tittel */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Meldinger</Text>
-      </View>
+    <View style={ParentMessagesStyles.screen}>
+      <View style={ParentMessagesStyles.container}>
+        <Text style={ParentMessagesStyles.title}>Meldinger</Text>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {MOCK_THREADS.map((thread) => (
-          <TouchableOpacity
-            key={thread.id}
-            style={styles.threadCard}
-            activeOpacity={0.85}
-            onPress={() =>
-              router.push({
-                pathname: "/messages/[id]",
-                params: { id: thread.id },
-              })
-            }
-          >
-            <View>
-              <Text style={styles.threadName}>{thread.name}</Text>
-              <Text style={styles.threadSubtitle}>{thread.subtitle}</Text>
-              <Text style={styles.threadPreview} numberOfLines={1}>
-                {thread.lastMessage}
-              </Text>
-            </View>
+        <ScrollView contentContainerStyle={ParentMessagesStyles.listContent}>
+          {MOCK_THREADS.map((thread) => (
+            <TouchableOpacity
+              key={thread.id}
+              style={ParentMessagesStyles.item}
+              activeOpacity={0.85}
+              onPress={() =>
+                router.push({
+                  pathname: "/messages/[id]",
+                  params: { id: thread.id },
+                })
+              }
+            >
+              <View style={ParentMessagesStyles.itemLeft}>
+                <Text style={ParentMessagesStyles.itemTitle}>
+                  {thread.name}
+                </Text>
 
-            {/* TODO: unreadCount bør komme fra backend når meldinger er lest */}
-            {thread.unreadCount > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadText}>{thread.unreadCount}</Text>
+                {thread.subtitle ? (
+                  <Text style={ParentMessagesStyles.itemSubtitle}>
+                    {thread.subtitle}
+                  </Text>
+                ) : null}
+
+                <Text
+                  style={ParentMessagesStyles.preview}
+                  numberOfLines={1}
+                >
+                  {thread.lastMessage}
+                </Text>
               </View>
-            )}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+              {thread.unreadCount > 0 && (
+                <View style={ParentMessagesStyles.badge}>
+                  <Text style={ParentMessagesStyles.badgeText}>
+                    {thread.unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    paddingTop: 16,
-    paddingBottom: 8,
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  threadCard: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  threadName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  threadSubtitle: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginBottom: 4,
-  },
-  threadPreview: {
-    fontSize: 12,
-    color: Colors.text,
-    maxWidth: 230,
-  },
-  unreadBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.red,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  unreadText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 12,
-  },
-});
