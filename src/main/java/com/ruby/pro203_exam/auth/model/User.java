@@ -5,6 +5,7 @@ package com.ruby.pro203_exam.auth.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -35,6 +36,16 @@ public class User {
     // URL to user's profile picture from Google
     @Column(name = "profile_picture_url", length = 500)
     private String profilePictureUrl;
+
+    @Column(name = "tos_accepted", nullable = false)
+    @Builder.Default
+    private Boolean tosAccepted = false;
+
+    @Column(name = "tos_accepted_at")
+    private LocalDateTime tosAcceptedAt;
+
+    @Column(name = "tos_version", length = 20)
+    private String tosVersion;
 
     // ----------------------------------------- System Fields ----------------------------------------- //
     // Role for authorization

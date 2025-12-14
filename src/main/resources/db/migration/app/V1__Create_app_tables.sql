@@ -9,7 +9,7 @@ CREATE TABLE kindergartens (
                                email VARCHAR(255) -- Contact email
 );
 
--- PARENTS TABLE ------------------------------
+------------------------------ PARENTS TABLE ------------------------------
 -- Stores parent/guardian information
 CREATE TABLE parents (
                          id UUID PRIMARY KEY,

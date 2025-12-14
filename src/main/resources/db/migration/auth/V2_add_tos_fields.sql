@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN tos_accepted BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN tos_accepted_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN tos_version VARCHAR(20);

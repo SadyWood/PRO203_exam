@@ -145,4 +145,13 @@ public class AuthController {
         log.info("GET /api/auth/users/{}", id);
         return ResponseEntity.ok(authService.getUserById(id));
     }
+
+    @PostMapping("/accept-tos")
+    public ResponseEntity<Void> acceptTos(
+            @RequestParam UUID userId,
+            @RequestParam String tosVersion) {
+        // TODO: Get userId from JWT token
+        authService.acceptTos(userId, tosVersion);
+        return ResponseEntity.ok().build();
+    }
 }

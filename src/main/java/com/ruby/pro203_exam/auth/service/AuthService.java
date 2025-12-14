@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 // Service for authentication and user management - handles the OpenID login flow and profile creation
@@ -185,6 +186,19 @@ public class AuthService {
         log.info("Created boss staff profile: {}", savedStaff.getId());
 
         return savedStaff.getId();
+    }
+
+    public void acceptTos(UUID userId, String tosVersion) {
+        log.info("User {} accepting TOS version {}", userId, tosVersion);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setTosAccepted(true);
+        user.setTosAcceptedAt(LocalDateTime.now());
+        user.setTosVersion(tosVersion);
+
+        userRepository.save(user);
     }
 
     // ------------------------------------- HELPER METHODS ------------------------------------- //
