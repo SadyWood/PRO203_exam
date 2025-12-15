@@ -10,7 +10,16 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pgr203.app"
+      "bundleIdentifier": "com.pgr203.app",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
