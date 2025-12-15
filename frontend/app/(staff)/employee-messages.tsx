@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { EmployeeMessagesStyles } from "@/styles";
-import { MOCK_THREADS, type Thread } from "../(mock)/mockThreads";
+import { MOCK_THREADS, type Thread } from "../../(mock)/mockThreads";
 
 type StaffThreadSummary = {
   id: string;

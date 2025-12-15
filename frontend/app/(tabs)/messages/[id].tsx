@@ -17,7 +17,7 @@ import {
   MOCK_PARENT_THREADS,
   type ParentThread,
   type ParentMessage,
-} from "../../(mock)/mockParentThreads";
+} from "../../../(mock)/mockParentThreads";
 
 export default function MessageChatScreen() {
   const params = useLocalSearchParams<{ id?: string }>();

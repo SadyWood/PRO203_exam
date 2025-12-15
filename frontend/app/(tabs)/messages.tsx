@@ -7,7 +7,7 @@ import { ParentMessagesStyles } from "@/styles";
 import {
   MOCK_PARENT_THREADS,
   type ParentThread,
-} from "../(mock)/mockParentThreads";
+} from "../../(mock)/mockParentThreads";
 
 type ThreadSummary = {
   id: string;

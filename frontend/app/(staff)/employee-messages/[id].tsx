@@ -13,7 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { ChatStyles } from "@/styles";
-import { MOCK_THREADS, type Message, type Thread } from "../../(mock)/mockThreads";
+import { MOCK_THREADS, type Message, type Thread } from "../../../(mock)/mockThreads";
 
 export default function EmployeeChat() {
   const router = useRouter();
