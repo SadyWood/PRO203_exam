@@ -8,7 +8,6 @@ import {
     TextInput,
 } from "react-native";
 import { styles } from "./employee-diaper-nap-style";
-import { Colors } from "@/constants/colors";
 
 const MOCK_CHILDREN = ["Edith", "Stian", "Hafiz"]
 
