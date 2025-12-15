@@ -12,17 +12,31 @@ export interface UserResponseDto {
   role: "PARENT" | "STAFF" | "ADMIN";
   profilePictureUrl?: string;
   profileId?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
+  employeeId?: string | null;
+  position?: string | null;
 }
 
 export interface LoginResponseDto {
   token: string;
   user: UserResponseDto;
-  // backend heter kanskje isNewUser eller needsRegistration – vi støtter begge:
   isNewUser?: boolean;
   needsRegistration?: boolean;
 }
 
-// Hjelper: normaliser feltet so frontend alltid bruker needsRegistration
+export type RegistrationRole = "PARENT" | "STAFF";
+
+export interface CompleteRegistrationDto {
+  role: RegistrationRole;
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  address?: string;
+  employeeId?: string;
+  position?: string;
+}
+
 function normalizeLoginResponse(json: any): LoginResponseDto {
   return {
     token: json.token,
@@ -39,7 +53,7 @@ export async function loginWithGoogle(idToken: string): Promise<LoginResponseDto
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ idToken }), // matcher GoogleAuthRequestDto
+    body: JSON.stringify({ idToken }),
   });
 
   if (!res.ok) {
@@ -51,7 +65,7 @@ export async function loginWithGoogle(idToken: string): Promise<LoginResponseDto
       const errJson = JSON.parse(text);
       if (errJson.message) message = errJson.message;
     } catch {
-      // ignorer JSON-feil
+
     }
     throw new Error(message);
   }
@@ -59,7 +73,6 @@ export async function loginWithGoogle(idToken: string): Promise<LoginResponseDto
   const json = await res.json();
   const loginResponse = normalizeLoginResponse(json);
 
-  // Lagre token & user med en gang (ekstra sikkerhet)
   await AsyncStorage.setItem("authToken", loginResponse.token);
   await AsyncStorage.setItem("currentUser", JSON.stringify(loginResponse.user));
 
@@ -91,4 +104,73 @@ export async function fetchCurrentUser(endpoint: string, options: RequestInit = 
   }
 
   return res;
+}
+
+export async function getCurrentUser(): Promise<UserResponseDto | null> {
+    const token = await AsyncStorage.getItem("authToken");
+    if (!token) return null;
+
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) {
+        console.log("fetchCurrentUser status:", res.status);
+        if (res.status === 401 || res.status === 403) {
+            await AsyncStorage.removeItem("authToken");
+            await AsyncStorage.removeItem("currentUser");
+        }
+        return null;
+    }
+
+    const json = await res.json();
+    const user = json as UserResponseDto;
+
+    await AsyncStorage.setItem("currentUser", JSON.stringify(user));
+
+    return user;
+}
+
+export async function completeRegistration(
+  data: CompleteRegistrationDto
+): Promise<UserResponseDto> {
+  const token = await AsyncStorage.getItem("authToken");
+  if (!token) {
+    throw new Error("Ingen auth-token funnet. Logg inn på nytt.");
+  }
+
+  const res = await fetch(`${API_BASE_URL}/auth/complete-registration`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.log("Complete registration error:", text);
+    let message = "Feil ved registrering.";
+    try {
+      const errJson = JSON.parse(text);
+      if (errJson.message) message = errJson.message;
+    } catch {
+
+    }
+    throw new Error(message);
+  }
+
+  const user = (await res.json()) as UserResponseDto;
+
+  await AsyncStorage.setItem("currentUser", JSON.stringify(user));
+
+  return user;
+}
+
+export async function logout(): Promise<void> {
+  await AsyncStorage.removeItem("authToken");
+  await AsyncStorage.removeItem("currentUser");
 }

@@ -1,4 +1,3 @@
-// app/(auth)/login.tsx
 import { Stack, useLocalSearchParams, useRouter, Link } from "expo-router";
 import { useState, useEffect } from "react";
 import {
@@ -39,7 +38,6 @@ export default function LoginScreen() {
   });
 
   useEffect(() => {
-    // Kalles når Google-login svarer
     const handleGoogleResponse = async () => {
       if (response?.type === "success") {
         const idToken = response.params?.id_token;
@@ -116,7 +114,7 @@ export default function LoginScreen() {
       if (user.role === "forelder") {
         router.replace("/home");
       } else if (user.role === "ansatt") {
-        router.replace("/");
+        router.replace("/(staff)/employee-home");
       } else {
         router.replace("/");
       }
@@ -190,7 +188,6 @@ export default function LoginScreen() {
           </Text>
         </Pressable>
 
-        {/* 🔵 Google-knapp under vanlig login */}
         <Pressable
           style={[
             styles.googleButton,
@@ -200,7 +197,9 @@ export default function LoginScreen() {
           disabled={isGoogleLoading || !request}
         >
           <Text style={styles.googleButtonText}>
-            {isGoogleLoading ? "Logger inn med Google..." : "Logg inn med Google"}
+            {isGoogleLoading
+              ? "Logger inn med Google..."
+              : "Logg inn med Google"}
           </Text>
         </Pressable>
 
@@ -262,7 +261,7 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     marginTop: 8,
-    backgroundColor: "#1a73e8", // Google-blå-ish
+    backgroundColor: "#1a73e8",
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: "center",

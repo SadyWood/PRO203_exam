@@ -1,6 +1,6 @@
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import {KeyboardAvoidingView, Platform, ScrollView,StyleSheet,Text, View, Pressable,} from "react-native";
-import { Colors} from "@/constants/colors";
+
 
 export default function PersonvernScreen() {
   const router = useRouter();
