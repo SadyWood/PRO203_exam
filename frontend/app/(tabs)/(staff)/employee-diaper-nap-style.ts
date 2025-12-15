@@ -68,18 +68,54 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         color: Colors.text,
     },
+    dropdown: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: Colors.primaryLightBlue,
+        backgroundColor: Colors.background,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+    },
+    dropdownText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: Colors.textMuted,
+    },
+    dropdownArrow: {
+        fontSize: 12,
+    },
+    dropdownList: {
+        marginTop: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: Colors.primaryBlue,
+        overflow: "hidden",
+        backgroundColor: Colors.background,
+    },
+    dropdownItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+    },
+    dropdownItemText: {
+        fontSize: 12,
+        color: Colors.text,
+        fontWeight: "600",
+    },
     choiceRow: {
         flexDirection: "row",
-        gap: 8,
-        marginTop: 4,
+        gap: 12,
+        marginTop: 8,
     },
     choiceButton: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        paddingVertical: 8,
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 12,
         backgroundColor: Colors.primaryBlue,
     },
     choiceButtonActive: {
@@ -101,25 +137,6 @@ export const styles = StyleSheet.create({
     submitText: {
         fontSize: 14,
         fontWeight: "700",
-        color: Colors.text,
-    },
-    typeRow: {
-        flexDirection: "row",
-        gap: 8,
-        marginTop: 4,
-    },
-    typeButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        borderRadius: 16,
-        backgroundColor: Colors.primaryLightBlue,
-    },
-    typeButtonActive: {
-        backgroundColor: Colors.primaryBlue,
-    },
-    typeText: {
-        fontSize: 12,
-        fontWeight: "600",
         color: Colors.text,
     },
 });

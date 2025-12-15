@@ -20,8 +20,8 @@ export default function EmployeeDiaperNapScreen() {
     const router = useRouter();
 
     const [mode, setMode] = useState<Mode>("Bleieskift");
-    const [selectedChild, setSelectedChild] = useState<string>(MOCK_CHILDREN[0]);
-
+    const [selectedChild, setSelectedChild] = useState<string | null>(null);
+    const [childOpen, setChildOpen] = useState(false);
     //bleie
     const [time, setTime] = useState("");
     const [diaperType, setDiaperType] = useState<DiaperType>("Tiss");
@@ -46,7 +46,7 @@ export default function EmployeeDiaperNapScreen() {
     }, [selectedChild, isDiaper, time, sleptAt, wokeAt]);
 
     const handleSumbit = () => {
-        if (!canSumbit) return;
+        if (!canSumbit || !selectedChild) return;
 
         if (isDiaper) {
             // TODO backend
@@ -78,6 +78,11 @@ export default function EmployeeDiaperNapScreen() {
         setComment("");
     };
 
+    const pickChild = (name: string) => {
+        setSelectedChild(name);
+        setChildOpen(false);
+    };
+
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.content}>
@@ -101,17 +106,23 @@ export default function EmployeeDiaperNapScreen() {
                 </View>
 
                 <Text style={styles.label}>Barn</Text>
-                <View style={styles.choiceRow}>{MOCK_CHILDREN.map((name) => {
-                    const active = selectedChild === name;
-                    return (<TouchableOpacity
-                        key={name} style={[styles.choiceButton, active && {backgroundColor: Colors.primaryLightBlue}]}
+                <TouchableOpacity style={styles.dropdown} activeOpacity={0.8}
+                onPress={() => setChildOpen((v) => !v)}>
+                    <Text style={styles.dropdownText}>{selectedChild ? selectedChild : "Velg barn"} </Text>
+                    <Text style={styles.dropdownArrow}>{childOpen ? "⬆️" : "⬇️"}</Text>
+                    </TouchableOpacity>
+                    {childOpen && ( 
+                <View style={styles.dropdownList}>
+                    {MOCK_CHILDREN.map((name) => ( 
+                        <TouchableOpacity
+                        key={name} style={styles.dropdownItem}
                         onPress={() => setSelectedChild(name)} activeOpacity={0.8}>
-                            <Text style={styles.choiceText}>{name}</Text>
+                            <Text style={styles.dropdownItemText}>{name}</Text>
                         </TouchableOpacity>
-                    );
-                })}
+                    ))}
                 </View>
-                {isDiaper && (
+                    )}
+                    {isDiaper && (
                     <>
                     <Text style={styles.label}>Tidspunkt</Text>
                     <TextInput style={styles.input} 
@@ -122,25 +133,25 @@ export default function EmployeeDiaperNapScreen() {
                     />
 
                     <Text style={styles.label}>Type</Text>
-                    <View style={styles.typeRow}>{(["Tiss", "Bæsj", "Begge"] as DiaperType[]).map((t) =>{
+                    <View style={styles.choiceRow}>{(["Tiss", "Bæsj", "Begge"] as DiaperType[]).map((t) =>{
                         const active = diaperType === t;
                         return (
                             <TouchableOpacity 
                             key={t}
-                            style={[styles.typeButton,]} onPress={() => setDiaperType(t)} activeOpacity={0.8}>
-                                <Text style={styles.typeText}>{t}</Text>
+                            style={[styles.choiceButton, active && styles.choiceButtonActive,]} onPress={() => setDiaperType(t)} activeOpacity={0.8}>
+                                <Text style={styles.choiceText}>{t}</Text>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
                 
                 <Text style={styles.label}>Hud Status</Text>
-                <View style={styles.choiceButton}>
+                <View style={styles.choiceRow}>
                     {(["Normal", "Litt rød", "Sår"] as SkinStatus[]).map((s) => {
                         const active = skinStatus === s;
                         return (
                             <TouchableOpacity key={s}
-                            style={[styles.choiceButton, active && {backgroundColor: Colors.primaryLightBlue}]}
+                            style={[styles.choiceButton, active && styles.choiceButtonActive]}
                             onPress={() => setSkinStatus(s)}
                             activeOpacity={0.8}>
                                 <Text style={styles.choiceText}>{s}</Text>
