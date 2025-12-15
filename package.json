@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@marceloterreiro/flash-calendar": "^1.6.0",
+    "@shopify/flash-list": "^2.2.0",
+    "expo": "^54.0.27"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
+}
