@@ -13,6 +13,7 @@ import { mockLogin } from "@/services/mockAuth";
 import { Colors } from "@/constants/colors";
 import {loginWithGoogle} from "@/services/authApi";
 import { authRefresh } from "../_layout";
+import { makeRedirectUri } from "expo-auth-session";
 
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";

@@ -29,7 +29,19 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.pgr203.app",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "com.googleusercontent.apps.231817845094-uosrqoegm0dtt60n18iso1u533h2noau",
+              "path": "/oauth2redirect"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",
