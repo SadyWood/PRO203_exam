@@ -5,8 +5,8 @@ import { useCallback, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { EmployeeCheckinStyles } from "@/styles";
-import { checkerApi } from "../../services/checkerApi";
-import type { CheckerResponseDto } from "../../services/types/checker";
+import { checkerApi } from "@/services/checkerApi";
+import type { CheckerResponseDto } from "@/services/types/checker";
 
 type CheckStatus = "NONE" | "INN" | "HENTET" | "SYK" | "FERIE";
 

@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { Colors } from "../constants/colors";
+import { Colors } from "@/constants/colors";
 
 export const  EmployeeHomeStyles = StyleSheet.create({
   safeArea: {

@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { fetchCurrentUser, logout } from "../../services/authApi";
+import { getCurrentUser, logout } from "@/services/authApi";
 import { useEffect, useState } from "react";
 import { EmployeeProfileStyles } from "@/styles";
 
@@ -18,7 +18,7 @@ export default function EmployeeProfile() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    fetchCurrentUser()
+    getCurrentUser()
       .then(setUser)
       .catch((err) => console.log("Feil ved uthenting av bruker:", err));
   }, []);

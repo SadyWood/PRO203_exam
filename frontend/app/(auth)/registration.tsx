@@ -6,12 +6,11 @@ import { KeyboardAvoidingView,Platform,
   View,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { completeRegistration,CompleteRegistrationDto,RegistrationRole,} from "../../services/authApi";
-import { Colors } from "../../constants/colors";
+import { completeRegistration,CompleteRegistrationDto,RegistrationRole,} from "@/services/authApi";
+import { Colors } from "@/constants/colors";
 
 type Params = {
   fullName?: string;

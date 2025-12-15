@@ -10,8 +10,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 import { ParentCheckinStyles } from "@/styles";
-import { checkerApi } from "../services/checkerApi";
-import type { PersonType } from "../services/types/checker";
+import { checkerApi } from "@/services/checkerApi";
+import type { PersonType } from "@/services/types/checker";
 
 type CheckStatus = "INN" | "UT" | "NONE";
 

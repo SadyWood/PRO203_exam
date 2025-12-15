@@ -2,7 +2,7 @@ import { Text, TextInput, Pressable, Alert, ScrollView } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 
-import { fetchCurrentUser, UserResponseDto } from "../services/authApi";
+import { getCurrentUser, UserResponseDto } from "@/services/authApi";
 import { EditProfileStyles } from "@/styles";
 
 export default function EditProfileScreen() {
@@ -17,7 +17,7 @@ export default function EditProfileScreen() {
      // TODO (BACKEND):
     // fetchCurrentUser() bør returnere oppdatert profil med feltene:
     // fullName, email (readonly), phoneNumber, address
-    fetchCurrentUser()
+    getCurrentUser()
       .then((user: UserResponseDto | null) => {
         if (!user) return;
         setFullName(user.fullName ?? "");
