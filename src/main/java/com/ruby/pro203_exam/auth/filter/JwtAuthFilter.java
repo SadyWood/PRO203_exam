@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,29 +32,45 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
             ) throws ServletException, IOException{
 
+        // Get authorization header
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            try{
-                String token = authHeader.substring(7);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Extract token (remove "Bearer " prefix)
+        String token = authHeader.substring(7);
+
+        try {
+            // Validate token and extract claims
+            if (jwtService.validateToken(token)) {
                 String email = jwtService.extractEmail(token);
                 String role = jwtService.extractRole(token);
 
-                if (email != null && jwtService.validateToken(token, email)) {
-                    List<SimpleGrantedAuthority> authorities = role != null
-                            ? List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                            : List.of();
+                // Create authority from role (e.g., ROLE_BOSS, ROLE_STAFF, ROLE_PARENT)
+                List<SimpleGrantedAuthority> authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
 
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
+                // Create authentication token
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(email, null, authorities);
 
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            }catch (Exception e){
-                log.error(e.getMessage());
+                // Attach request details
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // Set in security context (makes user available throughout request)
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                log.debug("Authenticated user: {} with role: {}", email, role);
             }
+        } catch (Exception e) {
+            log.error("JWT authentication failed: {}", e.getMessage());
+            // Don't set authentication - request will be rejected by security config
         }
-
+        
         filterChain.doFilter(request, response);
     }
-
 }
