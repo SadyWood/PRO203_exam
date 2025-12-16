@@ -76,9 +76,9 @@ public class JwtService {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
-    public boolean validateToken(String token, String email) {
+    public boolean validateToken(String token) {
         try {
-            return extractClaims(token).getSubject().equals(email) && !tokenExpirationCheck(token);
+            return extractClaims(token).getSubject().equals(extractEmail(token)) && !tokenExpirationCheck(token);
         } catch (Exception e) {
             log.error("Validation of the token failed: {}", e.getMessage());
             return false;
