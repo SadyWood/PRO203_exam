@@ -44,6 +44,14 @@ public class ParentService {
                 .collect(Collectors.toList());
     }
 
+    // Get parents by kindergarten
+    public List<ParentResponseDto> getParentsByKindergarten(UUID kindergartenId) {
+        log.info("Fetching parents for kindergarten: {}", kindergartenId);
+        return parentRepository.findByKindergartenId(kindergartenId).stream()
+                .map(this::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
     // Get parent by ID
     public ParentResponseDto getParentById(UUID id) {
         log.info("Fetching parent: {}", id);
