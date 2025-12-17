@@ -52,6 +52,11 @@ public class ParentService {
                 .collect(Collectors.toList());
     }
 
+    // Check if parent has children in a specific kindergarten
+    public boolean isParentInKindergarten(UUID parentId, UUID kindergartenId) {
+        return parentRepository.existsByIdAndKindergartenId(parentId, kindergartenId);
+    }
+
     // Get parent by ID
     public ParentResponseDto getParentById(UUID id) {
         log.info("Fetching parent: {}", id);

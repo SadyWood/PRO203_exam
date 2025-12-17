@@ -23,4 +23,11 @@ public interface ParentRepository extends JpaRepository<Parent, UUID> {
             "JOIN Child c ON c.id = pcr.childId " +
             "WHERE c.kindergartenId = :kindergartenId")
     List<Parent> findByKindergartenId(@Param("kindergartenId") UUID kindergartenId);
+
+    // Check if a parent has children in a specific kindergarten
+    @Query("SELECT COUNT(p) > 0 FROM Parent p " +
+            "JOIN ParentChildRelationship pcr ON pcr.parentId = p.id " +
+            "JOIN Child c ON c.id = pcr.childId " +
+            "WHERE p.id = :parentId AND c.kindergartenId = :kindergartenId")
+    boolean existsByIdAndKindergartenId(@Param("parentId") UUID parentId, @Param("kindergartenId") UUID kindergartenId);
 }
