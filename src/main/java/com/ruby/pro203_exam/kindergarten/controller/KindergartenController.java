@@ -24,7 +24,7 @@ import java.util.UUID;
 @Slf4j
 public class KindergartenController {
     private final KindergartenService kindergartenService;
-    private final AuthorizationService authService;
+    private final AuthorizationService authorizationService;
     private final SecurityUtils securityUtils;
 
     // Get all kindergartens
@@ -49,7 +49,7 @@ public class KindergartenController {
         User user = securityUtils.getCurrentUser();
 
         // Only boss of the kindergarten can update it
-        if (!authService.canEditKindergarten(user.getId(), id)) {
+        if (!authorizationService.canEditKindergarten(user.getId(), id)) {
             throw new AccessDeniedException("Only boss can edit kindergarten settings");
         }
 
@@ -61,7 +61,7 @@ public class KindergartenController {
         User user = securityUtils.getCurrentUser();
 
         // Only boss of the kindergarten can delete it
-        if (!authService.canEditKindergarten(user.getId(), id)) {
+        if (!authorizationService.canEditKindergarten(user.getId(), id)) {
             throw new AccessDeniedException("Only boss can delete kindergarten");
         }
 
