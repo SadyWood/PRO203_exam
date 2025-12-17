@@ -191,7 +191,7 @@ export default function HomeScreen() {
                     />
                     <PrimaryButton
                         label="Bleieskift & søvn"
-                        onPress={() => {}}
+                        onPress={() => router.push("/diaper-nap")}
                         variant="brown"
                     />
                     <PrimaryButton
