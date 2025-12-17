@@ -1,6 +1,5 @@
 import { StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
-import { Shadows } from "./shadows";
 
 export const EmployeeChildrenStyles = StyleSheet.create({
   /* Layout */
@@ -8,106 +7,170 @@ export const EmployeeChildrenStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-
   container: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    padding: 20,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  
+  backButton: {
+    padding: 4,
+  },
   title: {
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 18,
+    fontWeight: "700",
     color: Colors.text,
-    marginBottom: 12,
   },
-
-  listContent: {
+  scrollContent: {
     paddingBottom: 40,
   },
 
-  /* Child card */
-  item: {
+  /* Empty state */
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+    marginTop: 12,
+  },
+
+  /* Group card */
+  groupCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.primaryLightBlue,
-    marginBottom: 10,
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  groupHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    ...Shadows.soft,
+    padding: 16,
   },
-
-  itemLeft: {
-    flex: 1,
-    paddingRight: 10,
+  groupHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: "800",
+  groupHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  groupName: {
+    fontSize: 16,
+    fontWeight: "600",
     color: Colors.text,
   },
+  myGroupBadge: {
+    backgroundColor: Colors.primaryBlue,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  myGroupBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  groupCount: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  groupContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.primaryLightBlue,
+  },
 
-  itemSubtitle: {
+  /* Section labels */
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.textMuted,
+    marginTop: 12,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  emptyListText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontStyle: "italic",
+  },
+
+  /* Member rows */
+  memberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.primaryLightBlue,
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text,
+  },
+  memberSubtext: {
     fontSize: 12,
     color: Colors.textMuted,
     marginTop: 2,
-  },  titleRow: {
+  },
+  memberRight: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 8,
   },
 
+  /* Status pills */
   statusPill: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 999,
   },
-
-  statusPillIn: { backgroundColor: "#DCFCE7" },
-  statusPillOut: { backgroundColor: "#FEE2E2" },
-  statusPillVacation: { backgroundColor: "#E0F2FE" },
-
+  statusPillIn: {
+    backgroundColor: "#DCFCE7",
+  },
+  statusPillOut: {
+    backgroundColor: "#FEE2E2",
+  },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 4,
   },
-
-  statusDotIn: { backgroundColor: "#16A34A" },
-  statusDotOut: { backgroundColor: "#DC2626" },
-  statusDotVacation: { backgroundColor: "#0284C7" },
-
+  statusDotIn: {
+    backgroundColor: "#16A34A",
+  },
+  statusDotOut: {
+    backgroundColor: "#DC2626",
+  },
   statusText: {
-    fontSize: 11,
-    fontWeight: "800",
+    fontSize: 10,
+    fontWeight: "600",
   },
-
-  statusTextIn: { color: "#15803D" },
-  statusTextOut: { color: "#B91C1C" },
-  statusTextVacation: { color: "#0369A1" },
-
-  statusPillNone: { backgroundColor: "#F3F4F6" },
-
-  statusDotNone: { backgroundColor: "#9CA3AF" },
-
-  statusTextNone: { color: "#6B7280" },
-
-  arrow: {
-    fontSize: 16,
-    color: Colors.textMuted,
+  statusTextIn: {
+    color: "#15803D",
+  },
+  statusTextOut: {
+    color: "#B91C1C",
   },
 });
