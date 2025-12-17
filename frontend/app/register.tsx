@@ -160,7 +160,7 @@ export default function RegisterScreen(){
         router.replace("/home");
 
       }else if(selectedRole === "STAFF" || selectedRole === "BOSS"){
-        router.replace("/")
+        router.replace("/(staff)/employee-home");
 
       }
 
