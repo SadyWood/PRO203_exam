@@ -89,8 +89,8 @@ public class AuthorizationService {
         User user = getUser(userId);
         Child child = getChild(childId);
 
-        if (user.getRole() == UserRole.PARENT) {
-            return false;
+        if (user.getRole() == UserRole.PARENT || user.getRole() == UserRole.BOSS) {
+            return true;
         }
 
         return isPrivilegedAt(userId, child.getKindergartenId());
@@ -100,7 +100,7 @@ public class AuthorizationService {
     public boolean canAddChild(UUID userId, UUID kindergartenId) {
         User user = getUser(userId);
 
-        if (user.getRole() == UserRole.PARENT) {
+        if (user.getRole() == UserRole.PARENT || user.getRole() == UserRole.BOSS) {
             return true;
         }
 
