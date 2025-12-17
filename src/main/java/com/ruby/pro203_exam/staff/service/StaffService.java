@@ -34,6 +34,30 @@ public class StaffService {
         return toResponseDto(staff);
     }
 
+    public List<ResponseDto> getStaffByKindergarten(UUID kindergartenId) {
+        log.info("Get staff by kindergarten: {}", kindergartenId);
+        return staffRepository.findByKindergartenId(kindergartenId).stream()
+                .map(this::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public void promoteToAdmin(UUID staffId) {
+        log.info("Promoting staff {} to admin", staffId);
+        Staff staff = staffRepository.findById(staffId)
+                .orElseThrow(() -> new RuntimeException("Staff not found: " + staffId));
+        staff.setIsAdmin(true);
+        staffRepository.save(staff);
+    }
+
+    public void demoteFromAdmin(UUID staffId) {
+        log.info("Demoting staff {} from admin", staffId);
+        Staff staff = staffRepository.findById(staffId)
+                .orElseThrow(() -> new RuntimeException("Staff not found: " + staffId));
+        staff.setIsAdmin(false);
+        staffRepository.save(staff);
+    }
+
+    // ------------------------------------- HELPER METHODS ------------------------------------- //
     private ResponseDto toResponseDto(Staff staff) {
         return ResponseDto.builder()
                 .id(staff.getId())
@@ -43,8 +67,8 @@ public class StaffService {
                 .employeeId(staff.getEmployeeId())
                 .phoneNr(staff.getPhoneNumber())
                 .position(staff.getPosition())
+                .kindergartenId(staff.getKindergartenId())
+                .isAdmin(staff.getIsAdmin())
                 .build();
-
     }
-
 }
