@@ -22,7 +22,7 @@ import java.util.UUID;
 public class HealthDataController {
 
     private final HealthDataService healthDataService;
-    private final AuthorizationService authService;
+    private final AuthorizationService authorizationService;
     private final SecurityUtils securityUtils;
 
     // Get health data for a child
@@ -30,7 +30,7 @@ public class HealthDataController {
     public ResponseEntity<HealthDataResponseDto> getHealthData(@PathVariable UUID childId) {
         User user = securityUtils.getCurrentUser();
 
-        if (!authService.canViewHealthData(user.getId(), childId)) {
+        if (!authorizationService.canViewHealthData(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot view health data for this child");
         }
 
@@ -45,7 +45,7 @@ public class HealthDataController {
 
         User user = securityUtils.getCurrentUser();
 
-        if (!authService.canEditHealthData(user.getId(), childId)) {
+        if (!authorizationService.canEditHealthData(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot create health data for this child");
         }
 
@@ -60,7 +60,7 @@ public class HealthDataController {
 
         User user = securityUtils.getCurrentUser();
 
-        if (!authService.canEditHealthData(user.getId(), childId)) {
+        if (!authorizationService.canEditHealthData(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot update health data for this child");
         }
 
@@ -72,7 +72,7 @@ public class HealthDataController {
     public ResponseEntity<Void> deleteHealthData(@PathVariable UUID childId) {
         User user = securityUtils.getCurrentUser();
 
-        if (!authService.canEditHealthData(user.getId(), childId)) {
+        if (!authorizationService.canEditHealthData(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot delete health data for this child");
         }
 
