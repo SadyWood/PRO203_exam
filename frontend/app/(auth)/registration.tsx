@@ -15,6 +15,7 @@ import {
 } from "@/services/types/auth";
 import { Colors } from "@/constants/colors";
 import {completeRegistration} from "@/services/authApi";
+import { authRefresh } from "@/app/_layout";
 
 type Params = {
   fullName?: string;
@@ -32,6 +33,8 @@ export default function CompleteRegistrationScreen() {
   const [address, setAddress] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [position, setPosition] = useState("");
+  const [kindergartenName, setKindergartenName] = useState("");
+  const [kindergartenAddress, setKindergartenAddress] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -45,7 +48,7 @@ export default function CompleteRegistrationScreen() {
 
   function validate(): boolean {
     if (!role) {
-      setErrorMsg("Velg om du er forelder eller ansatt.");
+      setErrorMsg("Velg om du er forelder, ansatt eller daglig leder.");
       return false;
     }
     if (!firstName || firstName.trim().length < 2) {
@@ -56,8 +59,12 @@ export default function CompleteRegistrationScreen() {
       setErrorMsg("Etternavn må være minst 2 tegn.");
       return false;
     }
-    if (role === "STAFF" && !employeeId.trim()) {
+    if ((role === "STAFF" || role === "BOSS") && !employeeId.trim()) {
       setErrorMsg("Ansatt-ID må fylles ut for ansatte.");
+      return false;
+    }
+    if (role === "BOSS" && !kindergartenName.trim()) {
+      setErrorMsg("Barnehagennavn må fylles ut for daglig leder.");
       return false;
     }
     return true;
@@ -66,17 +73,21 @@ export default function CompleteRegistrationScreen() {
   async function handleSubmit() {
       if (!validate()) return;
       if (role === null) {
-          setErrorMsg("Velg om du er forelder eller ansatt.");
+          setErrorMsg("Velg om du er forelder, ansatt eller daglig leder.");
           return;
       }
+
+      const isStaffOrBoss = role === "STAFF" || role === "BOSS";
 
       const payload: CompleteRegistrationDto = {
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           phoneNumber: phoneNumber.trim() || undefined,
           address: role === "PARENT" ? address.trim() || undefined : undefined,
-          employeeId: role === "STAFF" ? employeeId.trim() || undefined : undefined,
-          position: role === "STAFF" ? position.trim() || undefined : undefined,
+          employeeId: isStaffOrBoss ? employeeId.trim() || undefined : undefined,
+          position: isStaffOrBoss ? position.trim() || undefined : undefined,
+          kindergartenName: role === "BOSS" ? kindergartenName.trim() || undefined : undefined,
+          kindergartenAddress: role === "BOSS" ? kindergartenAddress.trim() || undefined : undefined,
       };
 
       setIsSubmitting(true);
@@ -84,12 +95,23 @@ export default function CompleteRegistrationScreen() {
 
       try {
           // Pass role as first argument
-          await completeRegistration(role, payload);
-          router.replace("/(tabs)");
+          const updatedUser = await completeRegistration(role, payload);
+
+          // Wait for auth state to update
+          await authRefresh();
+
+          // Small delay to ensure state is updated before navigation
+          setTimeout(() => {
+              // Route based on role
+              if (role === "PARENT") {
+                  router.replace("/(tabs)/home");
+              } else {
+                  router.replace("/(staff)/employee-home");
+              }
+          }, 100);
       } catch (err: any) {
           console.error(err);
           setErrorMsg(err?.message ?? "Noe gikk galt. Prøv igjen.");
-      } finally {
           setIsSubmitting(false);
       }
   }
@@ -143,6 +165,7 @@ export default function CompleteRegistrationScreen() {
             <View style={styles.roleRow}>
               <RoleButton value="PARENT" label="Forelder" />
               <RoleButton value="STAFF" label="Ansatt" />
+              <RoleButton value="BOSS" label="Daglig leder" />
             </View>
 
             <Text style={styles.sectionTitle}>Personinfo</Text>
@@ -185,7 +208,7 @@ export default function CompleteRegistrationScreen() {
               </>
             )}
 
-            {role === "STAFF" && (
+            {(role === "STAFF" || role === "BOSS") && (
               <>
                 <Text style={styles.sectionTitle}>Ansattinfo</Text>
                 <Text style={styles.label}>Ansatt-ID *</Text>
@@ -201,7 +224,28 @@ export default function CompleteRegistrationScreen() {
                   style={styles.input}
                   value={position}
                   onChangeText={setPosition}
-                  placeholder="F.eks. Pedagogisk leder"
+                  placeholder={role === "BOSS" ? "F.eks. Daglig leder" : "F.eks. Pedagogisk leder"}
+                />
+              </>
+            )}
+
+            {role === "BOSS" && (
+              <>
+                <Text style={styles.sectionTitle}>Barnehage</Text>
+                <Text style={styles.label}>Barnehagennavn *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={kindergartenName}
+                  onChangeText={setKindergartenName}
+                  placeholder="F.eks. Eventyrhagen Barnehage"
+                />
+
+                <Text style={styles.label}>Adresse</Text>
+                <TextInput
+                  style={styles.input}
+                  value={kindergartenAddress}
+                  onChangeText={setKindergartenAddress}
+                  placeholder="F.eks. Eventyrveien 1, 0123 Oslo"
                 />
               </>
             )}
