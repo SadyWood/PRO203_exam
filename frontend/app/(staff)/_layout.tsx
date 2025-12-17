@@ -102,6 +102,26 @@ export default function StaffTabsLayout() {
           href: null,
         }}
       />
+
+      {/* Detail screens - hidden from tab bar */}
+      <Tabs.Screen
+        name="employee-diaper-nap"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="child-detail/[id]"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="staff-detail/[id]"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
 
   );
