@@ -1,7 +1,7 @@
 package com.ruby.pro203_exam.auth.config;
 
 import com.ruby.pro203_exam.auth.dto.ErrorResponseDto;
-import com.ruby.pro203_exam.auth.exceptions.AccessDeniedException;
+import com.ruby.pro203_exam.auth.exception.AccessDeniedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
