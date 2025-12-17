@@ -23,9 +23,10 @@ public class CheckerService {
 
     private final CheckerRepository checkerRepository;
 
-    public CheckerResponseDto checkIn(CheckInDto dto) {
+    public CheckerResponseDto checkIn(CheckInDto dto, UUID confirmedByStaff) {
         log.info("Child for checking in: {}", dto.getChildId());
 
+        // Check if already checked in
         checkerRepository.findByChildIdAndCheckOutTimeIsNull(dto.getChildId())
                 .ifPresent(existingChecker -> {
                     throw new RuntimeException("Child is already checked in");
@@ -37,36 +38,35 @@ public class CheckerService {
                 .droppedOffBy(dto.getDroppedOffBy())
                 .droppedOffByType(dto.getDroppedOffPersonType())
                 .droppedOffByName(dto.getDroppedOffPersonName())
-                .checkInConfirmedByStaff(dto.getDroppedOffConfirmedBy())
+                .checkInConfirmedByStaff(confirmedByStaff) // Use passed-in staff ID
                 .notes(dto.getNotes())
                 .build();
+
         CheckInOut savedCheckIn = checkerRepository.save(checkIn);
         log.info("Saved checkIn: {}", savedCheckIn.getId());
         return toResponseDto(savedCheckIn);
-
     }
 
-    public CheckerResponseDto checkOut(CheckOutDto dto) {
+    public CheckerResponseDto checkOut(CheckOutDto dto, UUID approvedByStaff) {
         log.info("Child for checking out: {}", dto.getChildId());
         CheckInOut checkIn = checkerRepository.findByChildIdAndCheckOutTimeIsNull(dto.getChildId())
-                .orElseThrow(() -> new RuntimeException("Child is already checked in"));
+                .orElseThrow(() -> new RuntimeException("Child is not checked in"));
 
         checkIn.setCheckOutTime(LocalDateTime.now());
         checkIn.setPickedUpBy(dto.getPickedUpBy());
         checkIn.setPickedUpByType(dto.getPickedUpPersonType());
         checkIn.setPickedUpByName(dto.getPickedUpPersonName());
-        checkIn.setCheckOutApprovedByStaff(dto.getPickedUpConfirmedBy());
+        checkIn.setCheckOutApprovedByStaff(approvedByStaff); // Use passed-in staff ID
         checkIn.setIdVerified(dto.isPickedUpConfirmed());
 
-        if(dto.getNotes() != null && !dto.getNotes().isEmpty()) {
+        if (dto.getNotes() != null && !dto.getNotes().isEmpty()) {
             String existingNotes = checkIn.getNotes() != null ? checkIn.getNotes() : "";
             checkIn.setNotes(existingNotes + (existingNotes.isEmpty() ? "" : " | ") + dto.getNotes());
-
         }
+
         CheckInOut savedCheckIn = checkerRepository.save(checkIn);
         log.info("Saved checkout: {}", savedCheckIn.getId());
         return toResponseDto(savedCheckIn);
-
     }
 
     public List<CheckerResponseDto> getActiveCheckins() {

@@ -1,5 +1,9 @@
 package com.ruby.pro203_exam.checker.controller;
 
+import com.ruby.pro203_exam.auth.model.User;
+import com.ruby.pro203_exam.auth.model.UserRole;
+import com.ruby.pro203_exam.auth.service.AuthorizationService;
+import com.ruby.pro203_exam.auth.util.SecurityUtils;
 import com.ruby.pro203_exam.checker.dto.CheckInDto;
 import com.ruby.pro203_exam.checker.dto.CheckOutDto;
 import com.ruby.pro203_exam.checker.dto.CheckerResponseDto;
@@ -8,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ruby.pro203_exam.auth.exception.AccessDeniedException;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,29 +23,56 @@ import java.util.UUID;
 @Slf4j
 public class CheckerController {
     private final CheckerService checkerService;
+    private final AuthorizationService authService;
+    private final SecurityUtils securityUtils;
 
-    @PostMapping("/checkin")
-    public ResponseEntity<CheckerResponseDto> checkin(@RequestBody CheckInDto checker) {
-        log.info("Checkin for child: {}", checker.getChildId());
-        return ResponseEntity.ok(checkerService.checkIn(checker));
+    @PostMapping("/check-in")
+    public ResponseEntity<CheckerResponseDto> checkIn(@RequestBody CheckInDto dto) {
+        User user = securityUtils.getCurrentUser();
+
+        // Parents can check in their own children, staff can check in any child
+        if (!authService.canCheckIn(user.getId(), dto.getChildId())) {
+            throw new AccessDeniedException("Cannot check in this child");
+        }
+
+        return ResponseEntity.ok(checkerService.checkIn(dto, user.getProfileId()));
     }
 
-    @PostMapping("/checkout")
-    public ResponseEntity<CheckerResponseDto> checkout(@RequestBody CheckOutDto checker) {
-        log.info("Checkout for child: {}", checker.getChildId());
-        return ResponseEntity.ok(checkerService.checkOut(checker));
+    @PostMapping("/check-out")
+    public ResponseEntity<CheckerResponseDto> checkOut(@RequestBody CheckOutDto dto) {
+        User user = securityUtils.getCurrentUser();
+
+        // Only staff can check out
+        if (!authService.canCheckOut(user.getId(), dto.getChildId())) {
+            throw new AccessDeniedException("Only staff can check out children");
+        }
+
+        return ResponseEntity.ok(checkerService.checkOut(dto, user.getProfileId()));
     }
 
     @GetMapping("/active")
     public ResponseEntity<List<CheckerResponseDto>> getActiveChecker() {
+        User user = securityUtils.getCurrentUser();
+
+        // Only staff can see all active check-ins
+        if (user.getRole() == UserRole.PARENT) {
+            throw new AccessDeniedException("Only staff can view all active check-ins");
+        }
+
         log.info("Checked in children");
         return ResponseEntity.ok(checkerService.getActiveCheckins());
     }
 
     @GetMapping("/history/{childId}")
     public ResponseEntity<List<CheckerResponseDto>> getChildHistory(@PathVariable UUID childId) {
+        User user = securityUtils.getCurrentUser();
+
+        // Parents can only see their own children's history
+        if (!authService.canViewChild(user.getId(), childId)) {
+            throw new AccessDeniedException("Cannot view history for this child");
+        }
+
         log.info("History for child: {}", childId);
         return ResponseEntity.ok(checkerService.getChildHistory(childId));
     }
-
 }
