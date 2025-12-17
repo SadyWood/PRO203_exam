@@ -7,7 +7,7 @@ import { EmployeeHomeStyles } from "@/styles";
 import { Colors } from "@/constants/colors";
 import { getCurrentUser } from "@/services/authApi";
 import { UserResponseDto } from "@/services/types/auth";
-import { staffApi, kindergartenApi, StaffResponseDto, KindergartenResponseDto } from "@/services/staffApi";
+import { staffApi, kindergartenApi, groupApi, childrenApi, StaffResponseDto, KindergartenResponseDto, GroupResponseDto, ChildResponseDto } from "@/services/staffApi";
 import { checkerApi } from "@/services/checkerApi";
 import type { CheckerResponseDto } from "@/services/types/checker";
 
@@ -35,12 +35,22 @@ const MOCK_AGENDA = [
   },
 ];
 
+// Mock tasks for boss - in production these would come from an API
+const MOCK_BOSS_TASKS = [
+  { id: "1", title: "Godkjenn feriesøknader", deadline: "I dag", priority: "high" },
+  { id: "2", title: "Oppdater kontaktliste", deadline: "Denne uken", priority: "medium" },
+  { id: "3", title: "Planlegg foreldremøte", deadline: "15. jan", priority: "low" },
+];
+
 export default function EmployeeHomeScreen() {
   const router = useRouter();
   const [user, setUser] = useState<UserResponseDto | null>(null);
   const [staffProfile, setStaffProfile] = useState<StaffResponseDto | null>(null);
   const [kindergarten, setKindergarten] = useState<KindergartenResponseDto | null>(null);
   const [activeCheckins, setActiveCheckins] = useState<CheckerResponseDto[]>([]);
+  const [groups, setGroups] = useState<GroupResponseDto[]>([]);
+  const [allChildren, setAllChildren] = useState<ChildResponseDto[]>([]);
+  const [allStaff, setAllStaff] = useState<StaffResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -60,6 +70,22 @@ export default function EmployeeHomeScreen() {
               setKindergarten(kg);
             } catch (kgErr) {
               console.log("Feil ved uthenting av barnehage:", kgErr);
+            }
+
+            // Load boss-specific data
+            if (currentUser.role === "BOSS") {
+              try {
+                const [groupsList, childrenList, staffList] = await Promise.all([
+                  groupApi.getGroupsByKindergarten(staff.kindergartenId),
+                  childrenApi.getAllChildren(),
+                  staffApi.getAllStaffAtKindergarten(),
+                ]);
+                setGroups(groupsList || []);
+                setAllChildren(childrenList || []);
+                setAllStaff(staffList || []);
+              } catch (bossErr) {
+                console.log("Feil ved uthenting av boss-data:", bossErr);
+              }
             }
           }
         } catch (staffErr) {
@@ -99,6 +125,28 @@ export default function EmployeeHomeScreen() {
     : user?.fullName?.split(" ")[0] ?? "Ansatt";
   const kindergartenName = kindergarten?.name ?? "Barnehage";
   const isBoss = user?.role === "BOSS";
+
+  // Boss dashboard calculations
+  const totalChildren = allChildren.length;
+  const totalStaff = allStaff.length;
+  const todayDate = new Date().toLocaleDateString("nb-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  });
+
+  // Calculate children per group with presence info
+  const groupStats = groups.map(group => {
+    const childrenInGroup = allChildren.filter(c => c.groupId === group.id);
+    const presentInGroup = childrenInGroup.filter(c =>
+      activeCheckins.some(checkin => checkin.childId === c.id)
+    ).length;
+    return {
+      ...group,
+      totalChildren: childrenInGroup.length,
+      presentChildren: presentInGroup,
+    };
+  });
 
   if (loading) {
     return (
@@ -153,47 +201,139 @@ export default function EmployeeHomeScreen() {
         </Pressable>
       </View>
 
-      <View style={EmployeeHomeStyles.statusCard}>
-        <Text style={EmployeeHomeStyles.statusTitle}>
-          Dagens status
-        </Text>
+      {/* Boss sees Dashboard, Staff sees Dagens Status */}
+      {isBoss ? (
+        <>
+          {/* Daily Summary Card */}
+          <View style={EmployeeHomeStyles.statusCard}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <Text style={[EmployeeHomeStyles.statusTitle, { marginBottom: 0 }]}>Daglig sammendrag</Text>
+              <Text style={{ fontSize: 11, color: Colors.textMuted, textTransform: "capitalize" }}>{todayDate}</Text>
+            </View>
 
-        <View style={EmployeeHomeStyles.statusRow}>
-          <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillIn]}>
-            <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotIn]} />
-            <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextIn]}>
-              Til stede: {presentCount}
-            </Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-around", marginTop: 8 }}>
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ fontSize: 24, fontWeight: "700", color: Colors.primaryBlue }}>{presentCount}</Text>
+                <Text style={{ fontSize: 11, color: Colors.textMuted }}>Til stede</Text>
+              </View>
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ fontSize: 24, fontWeight: "700", color: Colors.text }}>{totalChildren}</Text>
+                <Text style={{ fontSize: 11, color: Colors.textMuted }}>Totalt barn</Text>
+              </View>
+              <View style={{ alignItems: "center" }}>
+                <Text style={{ fontSize: 24, fontWeight: "700", color: Colors.text }}>{totalStaff}</Text>
+                <Text style={{ fontSize: 11, color: Colors.textMuted }}>Ansatte</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Groups Overview */}
+          <View style={EmployeeHomeStyles.statusCard}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <Text style={[EmployeeHomeStyles.statusTitle, { marginBottom: 0 }]}>Avdelingsoversikt</Text>
+              <Pressable onPress={() => router.push("/(staff)/admin/manage-groups")}>
+                <Text style={{ fontSize: 11, color: Colors.primaryBlue, fontWeight: "600" }}>Administrer</Text>
+              </Pressable>
+            </View>
+
+            {groupStats.length === 0 ? (
+              <Text style={{ fontSize: 12, color: Colors.textMuted, fontStyle: "italic" }}>Ingen grupper opprettet</Text>
+            ) : (
+              groupStats.map((group) => (
+                <View key={group.id} style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: Colors.primaryLightBlue,
+                }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: Colors.text }}>{group.name}</Text>
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillIn]}>
+                      <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextIn]}>
+                        {group.presentChildren}/{group.totalChildren}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+
+          {/* Tasks / Reminders */}
+          <View style={EmployeeHomeStyles.statusCard}>
+            <Text style={EmployeeHomeStyles.statusTitle}>Oppgaver & Påminnelser</Text>
+
+            {MOCK_BOSS_TASKS.map((task) => (
+              <View key={task.id} style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: Colors.primaryLightBlue,
+              }}>
+                <View style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  marginRight: 10,
+                  backgroundColor: task.priority === "high" ? "#DC2626" : task.priority === "medium" ? "#F59E0B" : "#10B981"
+                }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, color: Colors.text }}>{task.title}</Text>
+                  <Text style={{ fontSize: 11, color: Colors.textMuted }}>{task.deadline}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+              </View>
+            ))}
+          </View>
+        </>
+      ) : (
+        <View style={EmployeeHomeStyles.statusCard}>
+          <Text style={EmployeeHomeStyles.statusTitle}>
+            Dagens status
+          </Text>
+
+          <View style={EmployeeHomeStyles.statusRow}>
+            <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillIn]}>
+              <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotIn]} />
+              <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextIn]}>
+                Til stede: {presentCount}
+              </Text>
+            </View>
+          </View>
+
+          <View style={EmployeeHomeStyles.statusRow}>
+            <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillOut]}>
+              <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotOut]} />
+              <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextOut]}>
+                Hentet: {pickedUpCount}
+              </Text>
+            </View>
+          </View>
+
+          <View style={EmployeeHomeStyles.statusRow}>
+            <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillSick]}>
+              <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotSick]} />
+              <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextSick]}>
+                Syke: {sickCount}
+              </Text>
+            </View>
+          </View>
+
+          <View style={EmployeeHomeStyles.statusRow}>
+            <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillVacation]}>
+              <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotVacation]} />
+              <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextVacation]}>
+                På ferie: {vacationCount}
+              </Text>
+            </View>
           </View>
         </View>
-
-        <View style={EmployeeHomeStyles.statusRow}>
-          <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillOut]}>
-            <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotOut]} />
-            <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextOut]}>
-              Hentet: {pickedUpCount}
-            </Text>
-          </View>
-        </View>
-
-        <View style={EmployeeHomeStyles.statusRow}>
-          <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillSick]}>
-            <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotSick]} />
-            <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextSick]}>
-              Syke: {sickCount}
-            </Text>
-          </View>
-        </View>
-
-        <View style={EmployeeHomeStyles.statusRow}>
-          <View style={[EmployeeHomeStyles.statusPill, EmployeeHomeStyles.statusPillVacation]}>
-            <View style={[EmployeeHomeStyles.statusDot, EmployeeHomeStyles.statusDotVacation]} />
-            <Text style={[EmployeeHomeStyles.statusText, EmployeeHomeStyles.statusTextVacation]}>
-              På ferie: {vacationCount}
-            </Text>
-          </View>
-        </View>
-      </View>
+      )}
 
       {/* Boss Admin Section */}
       {isBoss && (
@@ -226,7 +366,8 @@ export default function EmployeeHomeScreen() {
         </View>
       )}
 
-      {MOCK_AGENDA.map((agenda) => (
+      {/* Staff sees daily agenda, Boss doesn't need it */}
+      {!isBoss && MOCK_AGENDA.map((agenda) => (
         <View key={agenda.title} style={EmployeeHomeStyles.agendaCard}>
           <Text style={EmployeeHomeStyles.agendaTitle}>{agenda.title}</Text>
           <View style={EmployeeHomeStyles.agendaBox}>
