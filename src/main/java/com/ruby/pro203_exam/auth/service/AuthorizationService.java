@@ -122,9 +122,18 @@ public class AuthorizationService {
             return isParentOfChild(user.getProfileId(), childId);
         }
 
+        /*
+        Removed for time being to avoid anyone but the parent from editing health data for a child due to security concerns
+        TODO:
+         1. Upgrade health data change history table to store every session instead of last edit
+         2. Notify parents when someone else (BOSS) edits health data
+         3. Parents must confirm change - show exactly what has changed to avoid accidentally removing something
+         4. Potentially only look into soft deletes for health data - mark inactive
+
         if (user.getRole() == UserRole.BOSS) {
             return isBossAt(userId, child.getKindergartenId());
         }
+        */
 
         return false;
     }
