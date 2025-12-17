@@ -141,7 +141,14 @@ export async function completeRegistration(
     throw new Error("Ingen auth-token funnet. Logg inn på nytt.");
   }
 
-  const res = await fetch(`${API_BASE_URL}/auth/complete-registration`, {
+  const userJson = await AsyncStorage.getItem("currentUser");
+  if(!userJson){
+    throw new Error("Ingen brukerdata funnet. Logg inn på nytt.");
+  }
+  const usera = JSON.parse(userJson);
+  const userId = usera.id
+
+  const res = await fetch(`${API_BASE_URL}/api/auth/complete-registration/${userId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

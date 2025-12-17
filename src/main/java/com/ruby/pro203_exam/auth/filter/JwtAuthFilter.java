@@ -50,9 +50,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String role = jwtService.extractRole(token);
 
                 // Create authority from role (e.g., ROLE_BOSS, ROLE_STAFF, ROLE_PARENT)
-                List<SimpleGrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority("ROLE_" + role)
-                );
+                List<SimpleGrantedAuthority> authorities;
+                if (role != null) {
+                    authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                }else {
+                    authorities = List.of(new SimpleGrantedAuthority("ROLE_INCOMPLETE"));
+                }
 
                 // Create authentication token
                 UsernamePasswordAuthenticationToken authToken =

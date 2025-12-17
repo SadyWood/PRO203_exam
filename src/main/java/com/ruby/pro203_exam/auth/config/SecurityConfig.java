@@ -36,6 +36,7 @@ public class SecurityConfig {
                 // Endpoint access rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/google").permitAll()
+                        .requestMatchers("/api/auth/complete-registration/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
