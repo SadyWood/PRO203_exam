@@ -24,7 +24,7 @@ import java.util.UUID;
 @Slf4j
 public class GroupController {
     private final GroupService groupService;
-    private final AuthorizationService authService;
+    private final AuthorizationService authorizationService;
     private final SecurityUtils securityUtils;
 
     // Create a group
@@ -33,7 +33,7 @@ public class GroupController {
         User user = securityUtils.getCurrentUser();
 
         // Only privileged staff can create groups
-        if (!authService.canManageGroups(user.getId(), dto.getKindergartenId())) {
+        if (!authorizationService.canManageGroups(user.getId(), dto.getKindergartenId())) {
             throw new AccessDeniedException("Cannot create groups in this kindergarten");
         }
 
@@ -63,7 +63,7 @@ public class GroupController {
         User user = securityUtils.getCurrentUser();
         GroupResponseDto group = groupService.getGroupById(id);
 
-        if (!authService.canManageGroups(user.getId(), group.getKindergartenId())) {
+        if (!authorizationService.canManageGroups(user.getId(), group.getKindergartenId())) {
             throw new AccessDeniedException("Cannot update this group");
         }
 
@@ -76,7 +76,7 @@ public class GroupController {
         User user = securityUtils.getCurrentUser();
         GroupResponseDto group = groupService.getGroupById(id);
 
-        if (!authService.canManageGroups(user.getId(), group.getKindergartenId())) {
+        if (!authorizationService.canManageGroups(user.getId(), group.getKindergartenId())) {
             throw new AccessDeniedException("Cannot delete this group");
         }
 
@@ -96,7 +96,7 @@ public class GroupController {
 
         // Only boss can assign staff to groups
         // TODO: Boss can assign staff but anyone can create a group? Improve this logic
-        if (!authService.canAssignStaff(user.getId(), group.getKindergartenId())) {
+        if (!authorizationService.canAssignStaff(user.getId(), group.getKindergartenId())) {
             throw new AccessDeniedException("Only boss can assign staff to groups");
         }
 
@@ -111,7 +111,7 @@ public class GroupController {
         GroupResponseDto group = groupService.getGroupById(groupId);
 
         // Only boss can remove staff from groups
-        if (!authService.canAssignStaff(user.getId(), group.getKindergartenId())) {
+        if (!authorizationService.canAssignStaff(user.getId(), group.getKindergartenId())) {
             throw new AccessDeniedException("Only boss can remove staff from groups");
         }
 
