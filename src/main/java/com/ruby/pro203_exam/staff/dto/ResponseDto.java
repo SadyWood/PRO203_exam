@@ -19,5 +19,6 @@ public class ResponseDto {
     private String employeeId;
     private String phoneNr;
     private String position;
-
+    private UUID kindergartenId;
+    private Boolean isAdmin;
 }
