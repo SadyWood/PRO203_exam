@@ -22,7 +22,7 @@ import java.util.UUID;
 @Slf4j
 public class ChildPermissionsController {
     private final ChildPermissionsService permissionsService;
-    private final AuthorizationService authService;
+    private final AuthorizationService authorizationService;
     private final SecurityUtils securityUtils;
 
     // Get permissions for a child
@@ -30,7 +30,7 @@ public class ChildPermissionsController {
     public ResponseEntity<ChildPermissionsResponseDto> getPermissions(@PathVariable UUID childId) {
         User user = securityUtils.getCurrentUser();
 
-        if (!authService.canViewChild(user.getId(), childId)) {
+        if (!authorizationService.canViewChild(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot view permissions for this child");
         }
 
@@ -50,7 +50,7 @@ public class ChildPermissionsController {
             throw new AccessDeniedException("Only parents can set child permissions");
         }
 
-        if (!authService.canViewChild(user.getId(), childId)) {
+        if (!authorizationService.canViewChild(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot set permissions for this child");
         }
 
@@ -70,7 +70,7 @@ public class ChildPermissionsController {
             throw new AccessDeniedException("Only parents can update child permissions");
         }
 
-        if (!authService.canViewChild(user.getId(), childId)) {
+        if (!authorizationService.canViewChild(user.getId(), childId)) {
             throw new AccessDeniedException("Cannot update permissions for this child");
         }
 
