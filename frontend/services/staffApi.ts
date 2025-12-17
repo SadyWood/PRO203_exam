@@ -7,6 +7,10 @@ import {
     GroupCreateDto,
     GroupUpdateDto,
     ChildResponseDto,
+    HealthDataResponseDto,
+    ParentResponseDto,
+    ParentChildDto,
+    CalendarEventResponseDto,
 } from "./types/staff";
 
 // Re-export types for convenience
@@ -18,6 +22,10 @@ export type {
     GroupCreateDto,
     GroupUpdateDto,
     ChildResponseDto,
+    HealthDataResponseDto,
+    ParentResponseDto,
+    ParentChildDto,
+    CalendarEventResponseDto,
 };
 
 // Staff API endpoints
@@ -91,6 +99,10 @@ export const groupApi = {
     // Get staff in a group
     getStaffInGroup: (groupId: string) =>
         apiGet<string[]>(`/api/groups/${groupId}/staff`),
+
+    // Get groups by staff member
+    getGroupsByStaff: (staffId: string) =>
+        apiGet<GroupResponseDto[]>(`/api/groups/staff/${staffId}`),
 };
 
 // Children API endpoint for staff view
@@ -102,4 +114,42 @@ export const childrenApi = {
     // Get child by ID
     getChildById: (childId: string) =>
         apiGet<ChildResponseDto>(`/api/children/${childId}`),
+};
+
+// Health data API endpoints
+export const healthApi = {
+    // Get health data for a child
+    getHealthDataByChild: (childId: string) =>
+        apiGet<HealthDataResponseDto>(`/api/health-data/child/${childId}`),
+};
+
+// Parent API endpoints
+export const parentApi = {
+    // Get all parents (staff only, filtered by kindergarten)
+    getAllParents: () =>
+        apiGet<ParentResponseDto[]>("/api/parents"),
+
+    // Get parent by ID
+    getParentById: (parentId: string) =>
+        apiGet<ParentResponseDto>(`/api/parents/${parentId}`),
+};
+
+// Relationship API endpoints
+export const relationshipApi = {
+    // Get relationships for a child (returns list of parent relationships)
+    getRelationshipsByChild: (childId: string) =>
+        apiGet<ParentChildDto[]>(`/api/relationships/child/${childId}`),
+};
+
+// Calendar API endpoints
+export const calendarApi = {
+    // Get events for a kindergarten
+    getEventsByKindergarten: (kindergartenId: string) =>
+        apiGet<CalendarEventResponseDto[]>(`/api/calendar/kindergarten/${kindergartenId}`),
+
+    // Get events by date range
+    getEventsByDateRange: (kindergartenId: string, start: string, end: string) =>
+        apiGet<CalendarEventResponseDto[]>(
+            `/api/calendar/kindergarten/${kindergartenId}/range?start=${start}&end=${end}`
+        ),
 };
