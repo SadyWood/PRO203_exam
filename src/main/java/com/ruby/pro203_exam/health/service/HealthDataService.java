@@ -31,7 +31,7 @@ public class HealthDataService {
         return toResponseDto(healthData);
     }
 
-    public HealthDataResponseDto createHealthData(UUID childId, CreateHealthDataDto dto) {
+    public HealthDataResponseDto createHealthData(UUID childId, CreateHealthDataDto dto, UUID profileId) {
         log.info("Creating health data for child: {}", childId);
 
         if (!childRepository.existsById(childId)) {
@@ -49,6 +49,8 @@ public class HealthDataService {
                 .medications(dto.getMedications())
                 .emergencyContact(dto.getEmergencyContact())
                 .dietaryRestrictions(dto.getDietaryRestrictions())
+                .lastEditedBy(profileId)
+                .lastEditedAt(java.time.LocalDateTime.now())
                 .build();
 
         HealthData saved = healthDataRepository.save(healthData);
@@ -61,7 +63,7 @@ public class HealthDataService {
         return toResponseDto(saved);
     }
 
-    public HealthDataResponseDto updateHealthData(UUID childId, UpdateHealthDataDto dto) {
+    public HealthDataResponseDto updateHealthData(UUID childId, UpdateHealthDataDto dto, UUID profileId) {
         log.info("Updating health data for child: {}", childId);
 
         HealthData healthData = healthDataRepository.findByChildId(childId)
@@ -82,6 +84,9 @@ public class HealthDataService {
         if (dto.getDietaryRestrictions() != null) {
             healthData.setDietaryRestrictions(dto.getDietaryRestrictions());
         }
+
+        healthData.setLastEditedBy(profileId);
+        healthData.setLastEditedAt(java.time.LocalDateTime.now());
 
         return toResponseDto(healthDataRepository.save(healthData));
     }
