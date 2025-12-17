@@ -7,42 +7,68 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 
 import { PostsStyles } from "@/styles";
 
-export default function BlogScreen() {
-  const router = useRouter();
+type BlogPost = {
+  id: string;
+  titleDate: string;
+  text: string;
+  imageUri?: string;
+  image?:  any;
+};
 
-  const posts = [
+const STORAGE_KEY = "blog_posts_v1";
+
+const FALLBACK_POSTS: BlogPost[] = [
     {
-      id: 1,
+      id: "1",
       titleDate: "13.11.25",
       text:
         "I dag var bjørne avdelingen ute på tur i skogen. De lekte masse og løp rundt mellom trærne. Etterpå ble det pølsegrilling.",
       image: require("../../assets/images/1.jpg"),
     },
     {
-      id: 2,
+      id: "2",
       titleDate: "30.11.25",
       text:
         "I dag var det halloweenfest. Mange fine kostymer og barna som ville fikk ansiktsmaling.",
       image: require("../../assets/images/2.jpg"),
     },
     {
-      id: 3,
+      id: "3",
       titleDate: "21.12.25",
       text:
         "Barna bygde snømann ute i barnehagen. De samarbeidet og hadde det veldig gøy.",
       image: require("../../assets/images/3.jpg"),
     },
     {
-      id: 4,
+      id: "4",
       titleDate: "05.01.26",
       text:
         "Første snødag på lekeplassen! Barna testet sklien og lekte i snøen hele dagen.",
       image: require("../../assets/images/4.jpg"),
     },
   ];
+
+  export default function EmployeePostsScreen() {
+    const router = useRouter();
+    const [posts, setPosts] = useState<BlogPost[]>(FALLBACK_POSTS);
+
+    useEffect(() => {
+      (async () => {
+        try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        const parsed: BlogPost[] = stored ? JSON.parse(stored) : [];
+        setPosts([...parsed, ...FALLBACK_POSTS]);
+      } catch {
+        setPosts(FALLBACK_POSTS);
+      }
+    })();
+    }, []);
+
 
   return (
     <ScrollView
@@ -64,9 +90,9 @@ export default function BlogScreen() {
           key={post.id}
           style={PostsStyles.card}
           activeOpacity={0.85}
-          onPress={() => router.push(`/blog/${post.id}`)}
+          onPress={() => router.push(`/(staff)/employee-posts${post.id}`)}
         >
-          <Image source={post.image} style={PostsStyles.image} />
+          <Image source={post.imageUri ? { uri: post.imageUri } : post.image} style={PostsStyles.image} />
 
           <View style={PostsStyles.textContainer}>
             <Text style={PostsStyles.date}>{post.titleDate}</Text>

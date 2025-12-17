@@ -74,6 +74,7 @@ export default function EmployeeHomeScreen() {
       <View style={EmployeeHomeStyles.quickActionsRow}>
         <Pressable
           style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnNeutral]}
+          onPress={() => router.push("/(staff)/employee-diaper-nap")}
         >
           <Text style={EmployeeHomeStyles.primaryBtnText}>Bleieskift & søvn</Text>
         </Pressable>

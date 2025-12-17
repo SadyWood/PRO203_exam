@@ -2,7 +2,9 @@
   "dependencies": {
     "@marceloterreiro/flash-calendar": "^1.6.0",
     "@shopify/flash-list": "^2.2.0",
-    "expo": "^54.0.27"
+    "expo": "^54.0.27",
+    "react-dom": "19.1.0",
+    "react-native-web": "^0.21.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",

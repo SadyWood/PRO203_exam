@@ -8,7 +8,7 @@ import { View,
   TextInput,
  } from "react-native";
  import { Calendar, toDateId, type CalendarTheme } from "@marceloterreiro/flash-calendar";
- import { styles } from "./calendar-styles";
+ import { styles } from "../../styles/calendar-styles";
  import { Colors } from "@/constants/colors";
 
  const getMonthDays = (dateId: string) => {

@@ -7,7 +7,7 @@ import {
     TouchableOpacity,
     TextInput,
 } from "react-native";
-import { styles } from "./employee-diaper-nap-style";
+import { styles } from "../../styles/employee-diaper-nap-style";
 
 const MOCK_CHILDREN = ["Edith", "Stian", "Hafiz"]
 
