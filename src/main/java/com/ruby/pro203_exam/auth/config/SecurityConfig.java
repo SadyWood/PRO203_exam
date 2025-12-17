@@ -37,6 +37,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/google").permitAll()
                         .requestMatchers("/api/auth/complete-registration/**").permitAll()
+                        .requestMatchers("/api/kindergartens").permitAll()
                         .requestMatchers("/error").permitAll()
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
