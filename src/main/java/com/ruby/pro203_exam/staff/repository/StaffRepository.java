@@ -4,6 +4,7 @@ import com.ruby.pro203_exam.staff.model.Staff;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,4 +19,7 @@ public interface StaffRepository extends CrudRepository<Staff, UUID> {
 
     // Check if employee id exists
     boolean existsByEmployeeId(String employeeID);
+
+    // Find all staff at a kindergarten
+    List<Staff> findByKindergartenId(UUID kindergartenId);
 }
