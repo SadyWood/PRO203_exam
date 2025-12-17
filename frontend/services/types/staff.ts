@@ -60,7 +60,62 @@ export interface ChildResponseDto {
     firstName: string;
     lastName: string;
     birthDate?: string;
+    groupName?: string;
     groupId?: string;
-    parentIds: string[];
-    profilePictureUrl?: string;
+    kindergartenId?: string;
+    kindergartenName?: string;
+    checkedIn?: boolean;
+}
+
+// Health data response DTO
+export interface HealthDataResponseDto {
+    id: string;
+    childId: string;
+    childName?: string;
+    medicalConditions?: string;
+    allergies?: string;
+    medications?: string;
+    emergencyContact?: string;
+    dietaryRestrictions?: string;
+    lastEditedBy?: string;
+    lastEditedAt?: string;
+}
+
+// Parent response DTO
+export interface ParentResponseDto {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phoneNumber?: string;
+    canPickup?: boolean;
+}
+
+// Parent-child relationship DTO
+export interface ParentChildDto {
+    id: string;
+    parentId: string;
+    childId: string;
+    relationStatus?: string;
+    canCheckOut?: boolean;
+    canCheckIn?: boolean;
+    isPrimaryContact?: boolean;
+    requiredVerification?: boolean;
+}
+
+// Calendar event response DTO
+export interface CalendarEventResponseDto {
+    id: string;
+    kindergartenId: string;
+    groupId?: string;
+    groupName?: string;
+    title: string;
+    description?: string;
+    eventDate: string;
+    startTime?: string;
+    endTime?: string;
+    location?: string;
+    createdBy?: string;
+    createdByName?: string;
+    createdAt?: string;
 }
