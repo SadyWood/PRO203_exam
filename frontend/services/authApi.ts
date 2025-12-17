@@ -9,7 +9,7 @@ export interface UserResponseDto {
   id: string;
   fullName: string;
   email: string;
-  role: "PARENT" | "STAFF" | "ADMIN";
+  role: "PARENT" | "STAFF" | "ADMIN" | "BOSS";
   profilePictureUrl?: string;
   profileId?: string | null;
   phoneNumber?: string | null;

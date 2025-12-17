@@ -31,7 +31,7 @@ export default function EmployeeProfile() {
 
   const handleLogout = async () => {
     await logout();
-    router.replace("/login");
+    router.replace("/");
   };
   return (
     <ScrollView style={EmployeeProfileStyles.container}>
