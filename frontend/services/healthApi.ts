@@ -1,88 +1,52 @@
-import {Platform} from "react-native";
-import {HealthDataInterface} from "@/models/health";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { apiGet, apiPost, apiPut, apiDelete } from "./api";
+import {
+    HealthDataResponseDto,
+    CreateHealthDataDto,
+    UpdateHealthDataDto,
+} from "./types/health";
 
-const API_BASE_URL = Platform.OS === "android"
-    ? "http://10.0.2.2:8080"
-    : "http://localhost:8080";
-
-export async function getHealthData(childId: string): Promise<HealthDataInterface | null>{
+export async function getHealthData(childId: string): Promise<HealthDataResponseDto | null> {
     try {
-        const token = await AsyncStorage.getItem("authToken");
-        if (!token) throw new Error("no token");
-
-        const res = await fetch(`${API_BASE_URL}/api/health-data/child/${childId}`, {
-            headers: {
-                Authorization: `Bearer $${token}`,
-            },
-        });
-
-        if (!res.ok){
-            if(res.status === 404) return null;
-            throw new Error("Failed on fetch");
+        return await apiGet<HealthDataResponseDto>(`/api/health-data/child/${childId}`);
+    } catch (error: any) {
+        if (error.message?.includes("404") || error.message?.includes("not found")) {
+            return null;
         }
-
-        return await res.json();
-
-    }catch (error){
-
-        console.error(error);
-        return null;
-    }
-}
-
-export async function updateHealthData(
-    childId: string, data: Partial<HealthDataInterface>): Promise<HealthDataInterface | null>{
-    try {
-
-        const token = await AsyncStorage.getItem("authToken");
-        if (!token) throw new Error("no token");
-
-        const res = await fetch(`${API_BASE_URL}/api/health-data/child/${childId}`, {
-            method: "PUT",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-            });
-
-        if (!res.ok){
-            throw new Error("failed to update");
-        }
-
-        return await res.json();
-
-    }catch (error){
-        console.error(error);
+        console.error("getHealthData error:", error);
         return null;
     }
 }
 
 export async function createHealthData(
-    childId: string, data: Partial<HealthDataInterface>): Promise<HealthDataInterface | null>{
+    childId: string,
+    data: CreateHealthDataDto
+): Promise<HealthDataResponseDto | null> {
     try {
-
-        const token = await AsyncStorage.getItem("authToken");
-        if (!token) throw new Error("no token");
-
-        const res = await fetch(`${API_BASE_URL}/api/health-data/child/${childId}`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (!res.ok){
-            throw new Error("failed to update");
-        }
-
-        return await res.json();
-
-    }catch (error){
-        console.error(error);
+        return await apiPost<HealthDataResponseDto>(`/api/health-data/child/${childId}`, data);
+    } catch (error) {
+        console.error("createHealthData error:", error);
         return null;
+    }
+}
+
+export async function updateHealthData(
+    childId: string,
+    data: UpdateHealthDataDto
+): Promise<HealthDataResponseDto | null> {
+    try {
+        return await apiPut<HealthDataResponseDto>(`/api/health-data/child/${childId}`, data);
+    } catch (error) {
+        console.error("updateHealthData error:", error);
+        return null;
+    }
+}
+
+export async function deleteHealthData(childId: string): Promise<boolean> {
+    try {
+        await apiDelete(`/api/health-data/child/${childId}`);
+        return true;
+    } catch (error) {
+        console.error("deleteHealthData error:", error);
+        return false;
     }
 }
