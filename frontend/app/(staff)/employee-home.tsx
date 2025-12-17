@@ -7,40 +7,9 @@ import { EmployeeHomeStyles } from "@/styles";
 import { Colors } from "@/constants/colors";
 import { getCurrentUser } from "@/services/authApi";
 import { UserResponseDto } from "@/services/types/auth";
-import { staffApi, kindergartenApi, groupApi, childrenApi, StaffResponseDto, KindergartenResponseDto, GroupResponseDto, ChildResponseDto } from "@/services/staffApi";
+import { staffApi, kindergartenApi, groupApi, childrenApi, calendarApi, StaffResponseDto, KindergartenResponseDto, GroupResponseDto, ChildResponseDto, CalendarEventResponseDto } from "@/services/staffApi";
 import { checkerApi } from "@/services/checkerApi";
 import type { CheckerResponseDto } from "@/services/types/checker";
-
-type CheckStatus = "NONE" | "INN" | "HENTET" | "SYK" | "FERIE";
-
-type ChildStatus = {
-  status: CheckStatus;
-  time?: string;
-};
-
-const MOCK_AGENDA = [
-  {
-    title: "Dagens plan",
-    date: new Date().toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "2-digit" }),
-    items: [
-      "Felles oppstart: 08:45",
-      "Tegne/puslespill: 09:00 - 10:00",
-      "Leseøkt: 10:15 - 10:45",
-      "Ryddetid: 10:45 - 11:00",
-      "Lunsj: 11:00",
-      "Sovetid: 11:30",
-      "Stå opp og spise matpakke: 13:30",
-      "Utelek: 14:30",
-    ],
-  },
-];
-
-// Mock tasks for boss - in production these would come from an API
-const MOCK_BOSS_TASKS = [
-  { id: "1", title: "Godkjenn feriesøknader", deadline: "I dag", priority: "high" },
-  { id: "2", title: "Oppdater kontaktliste", deadline: "Denne uken", priority: "medium" },
-  { id: "3", title: "Planlegg foreldremøte", deadline: "15. jan", priority: "low" },
-];
 
 export default function EmployeeHomeScreen() {
   const router = useRouter();
@@ -51,6 +20,7 @@ export default function EmployeeHomeScreen() {
   const [groups, setGroups] = useState<GroupResponseDto[]>([]);
   const [allChildren, setAllChildren] = useState<ChildResponseDto[]>([]);
   const [allStaff, setAllStaff] = useState<StaffResponseDto[]>([]);
+  const [todayEvents, setTodayEvents] = useState<CalendarEventResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -70,6 +40,15 @@ export default function EmployeeHomeScreen() {
               setKindergarten(kg);
             } catch (kgErr) {
               console.log("Feil ved uthenting av barnehage:", kgErr);
+            }
+
+            // Fetch today's calendar events
+            try {
+              const today = new Date().toISOString().split("T")[0];
+              const events = await calendarApi.getEventsByDateRange(staff.kindergartenId, today, today);
+              setTodayEvents(events || []);
+            } catch (calErr) {
+              console.log("Feil ved uthenting av kalender:", calErr);
             }
 
             // Load boss-specific data
@@ -190,7 +169,7 @@ export default function EmployeeHomeScreen() {
           style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnPrimary]}
           onPress={() => router.push("/(staff)/employee-children")}
         >
-          <Text style={EmployeeHomeStyles.primaryBtnText}>Se avdelingen liste</Text>
+          <Text style={EmployeeHomeStyles.primaryBtnText}>Avdelinger</Text>
         </Pressable>
 
         <Pressable
@@ -263,33 +242,39 @@ export default function EmployeeHomeScreen() {
             )}
           </View>
 
-          {/* Tasks / Reminders */}
-          <View style={EmployeeHomeStyles.statusCard}>
-            <Text style={EmployeeHomeStyles.statusTitle}>Oppgaver & Påminnelser</Text>
+          {/* Today's Events */}
+          {todayEvents.length > 0 && (
+            <View style={EmployeeHomeStyles.statusCard}>
+              <Text style={EmployeeHomeStyles.statusTitle}>Dagens hendelser</Text>
 
-            {MOCK_BOSS_TASKS.map((task) => (
-              <View key={task.id} style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 8,
-                borderBottomWidth: 1,
-                borderBottomColor: Colors.primaryLightBlue,
-              }}>
-                <View style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  marginRight: 10,
-                  backgroundColor: task.priority === "high" ? "#DC2626" : task.priority === "medium" ? "#F59E0B" : "#10B981"
-                }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, color: Colors.text }}>{task.title}</Text>
-                  <Text style={{ fontSize: 11, color: Colors.textMuted }}>{task.deadline}</Text>
+              {todayEvents.map((event) => (
+                <View key={event.id} style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: Colors.primaryLightBlue,
+                }}>
+                  <View style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    marginRight: 10,
+                    backgroundColor: Colors.primaryBlue,
+                  }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, color: Colors.text }}>{event.title}</Text>
+                    {event.startTime && (
+                      <Text style={{ fontSize: 11, color: Colors.textMuted }}>
+                        {event.startTime}{event.endTime ? ` - ${event.endTime}` : ""}
+                        {event.groupName ? ` | ${event.groupName}` : ""}
+                      </Text>
+                    )}
+                  </View>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </>
       ) : (
         <View style={EmployeeHomeStyles.statusCard}>
@@ -366,20 +351,23 @@ export default function EmployeeHomeScreen() {
         </View>
       )}
 
-      {/* Staff sees daily agenda, Boss doesn't need it */}
-      {!isBoss && MOCK_AGENDA.map((agenda) => (
-        <View key={agenda.title} style={EmployeeHomeStyles.agendaCard}>
-          <Text style={EmployeeHomeStyles.agendaTitle}>{agenda.title}</Text>
+      {/* Staff sees daily events from calendar */}
+      {!isBoss && todayEvents.length > 0 && (
+        <View style={EmployeeHomeStyles.agendaCard}>
+          <Text style={EmployeeHomeStyles.agendaTitle}>Dagens hendelser</Text>
           <View style={EmployeeHomeStyles.agendaBox}>
-            <Text style={EmployeeHomeStyles.agendaDate}>{agenda.date}</Text>
-            {agenda.items.map((item) => (
-              <Text key={item} style={EmployeeHomeStyles.agendaItem}>
-                • {item}
+            <Text style={EmployeeHomeStyles.agendaDate}>
+              {new Date().toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+            </Text>
+            {todayEvents.map((event) => (
+              <Text key={event.id} style={EmployeeHomeStyles.agendaItem}>
+                • {event.startTime ? `${event.startTime}: ` : ""}{event.title}
+                {event.groupName ? ` (${event.groupName})` : ""}
               </Text>
             ))}
           </View>
         </View>
-      ))}
+      )}
     </ScrollView>
   );
 }
