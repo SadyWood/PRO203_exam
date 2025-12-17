@@ -66,23 +66,43 @@ export default function StaffTabsLayout() {
        <Tabs.Screen
         name="employee-checkin"
         options={{
-          href: null, 
+          href: null,
         }}
       />
       <Tabs.Screen
         name="employee-messages"
-        options={{  
-            href: null,         
+        options={{
+            href: null,
           }}
         />
 
       <Tabs.Screen
         name="employee-messages/[id]"
         options={{
-          href: null, 
+          href: null,
+        }}
+      />
+
+      {/* Admin screens - hidden from tab bar */}
+      <Tabs.Screen
+        name="admin/kindergarten-settings"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="admin/manage-groups"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="admin/manage-staff"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
-    
+
   );
 }
