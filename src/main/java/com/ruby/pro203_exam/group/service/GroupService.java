@@ -107,6 +107,39 @@ public class GroupService {
                 .toList();
     }
 
+    // Assign child to group
+    public void assignChildToGroup(UUID childId, UUID groupId) {
+        log.info("Assigning child {} to group {}", childId, groupId);
+
+        var child = childRepository.findById(childId)
+                .orElseThrow(() -> new RuntimeException("Child not found"));
+
+        if (!groupRepository.existsById(groupId)) {
+            throw new RuntimeException("Group not found");
+        }
+
+        child.setGroupId(groupId);
+        childRepository.save(child);
+    }
+
+    // Remove child from group
+    public void removeChildFromGroup(UUID childId) {
+        log.info("Removing child {} from group", childId);
+
+        var child = childRepository.findById(childId)
+                .orElseThrow(() -> new RuntimeException("Child not found"));
+
+        child.setGroupId(null);
+        childRepository.save(child);
+    }
+
+    // Get children assigned to a group
+    public List<UUID> getChildrenByGroup(UUID groupId) {
+        return childRepository.findByGroupId(groupId).stream()
+                .map(child -> child.getId())
+                .toList();
+    }
+
     // Delete group - Admin only and must be empty
     public void deleteGroup(UUID groupId) {
         log.info("Deleting group: {}", groupId);

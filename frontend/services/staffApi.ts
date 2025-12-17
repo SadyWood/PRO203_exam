@@ -83,6 +83,14 @@ export const groupApi = {
     // Remove child from group
     removeChildFromGroup: (groupId: string, childId: string) =>
         apiDelete<void>(`/api/groups/${groupId}/children/${childId}`),
+
+    // Get children in a group
+    getChildrenInGroup: (groupId: string) =>
+        apiGet<string[]>(`/api/groups/${groupId}/children`),
+
+    // Get staff in a group
+    getStaffInGroup: (groupId: string) =>
+        apiGet<string[]>(`/api/groups/${groupId}/staff`),
 };
 
 // Children API endpoint for staff view

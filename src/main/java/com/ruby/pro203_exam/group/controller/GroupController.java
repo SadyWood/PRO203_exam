@@ -124,4 +124,52 @@ public class GroupController {
     public ResponseEntity<List<GroupResponseDto>> getGroupsByStaff(@PathVariable UUID staffId) {
         return ResponseEntity.ok(groupService.getGroupsByStaff(staffId));
     }
+
+    // Assign child to a group
+    @PostMapping("/{groupId}/children/{childId}")
+    public ResponseEntity<Void> assignChild(
+            @PathVariable UUID groupId,
+            @PathVariable UUID childId) {
+
+        User user = securityUtils.getCurrentUser();
+        GroupResponseDto group = groupService.getGroupById(groupId);
+
+        // Only boss can assign children to groups
+        if (!authorizationService.canManageGroups(user.getId(), group.getKindergartenId())) {
+            throw new AccessDeniedException("Only boss can assign children to groups");
+        }
+
+        groupService.assignChildToGroup(childId, groupId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Remove child from group
+    @DeleteMapping("/{groupId}/children/{childId}")
+    public ResponseEntity<Void> removeChild(
+            @PathVariable UUID groupId,
+            @PathVariable UUID childId) {
+
+        User user = securityUtils.getCurrentUser();
+        GroupResponseDto group = groupService.getGroupById(groupId);
+
+        // Only boss can remove children from groups
+        if (!authorizationService.canManageGroups(user.getId(), group.getKindergartenId())) {
+            throw new AccessDeniedException("Only boss can remove children from groups");
+        }
+
+        groupService.removeChildFromGroup(childId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Get children in a group
+    @GetMapping("/{groupId}/children")
+    public ResponseEntity<List<UUID>> getChildrenInGroup(@PathVariable UUID groupId) {
+        return ResponseEntity.ok(groupService.getChildrenByGroup(groupId));
+    }
+
+    // Get staff in a group
+    @GetMapping("/{groupId}/staff")
+    public ResponseEntity<List<UUID>> getStaffInGroup(@PathVariable UUID groupId) {
+        return ResponseEntity.ok(groupService.getStaffByGroup(groupId));
+    }
 }

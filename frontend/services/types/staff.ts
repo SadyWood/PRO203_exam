@@ -32,9 +32,15 @@ export interface KindergartenUpdateDto {
 export interface GroupResponseDto {
     id: string;
     name: string;
+    description?: string;
     kindergartenId: string;
-    childIds: string[];
-    staffIds: string[];
+    ageRange?: string;
+    maxCapacity?: number;
+    childCount: number;
+    staffCount: number;
+    // For frontend tracking of members - populated by separate API calls
+    childIds?: string[];
+    staffIds?: string[];
 }
 
 // Group create DTO
