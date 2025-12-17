@@ -1,11 +1,15 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
 import { EmployeeHomeStyles } from "@/styles";
-
-const CHECKIN_STORAGE_KEY = "employee_checkin_statuses_bjorn";
+import { Colors } from "@/constants/colors";
+import { getCurrentUser } from "@/services/authApi";
+import { UserResponseDto } from "@/services/types/auth";
+import { staffApi, kindergartenApi, StaffResponseDto, KindergartenResponseDto } from "@/services/staffApi";
+import { checkerApi } from "@/services/checkerApi";
+import type { CheckerResponseDto } from "@/services/types/checker";
 
 type CheckStatus = "NONE" | "INN" | "HENTET" | "SYK" | "FERIE";
 
@@ -14,61 +18,107 @@ type ChildStatus = {
   time?: string;
 };
 
-const MOCK_EMPLOYEE = {
-  name: "Maiken",
-  department: "Avdeling Bjørn",
-};
-
 const MOCK_AGENDA = [
   {
-    title: "Dagens plan - Avdeling Bjørn",
-    date: "09.01.26",
+    title: "Dagens plan",
+    date: new Date().toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "2-digit" }),
     items: [
       "Felles oppstart: 08:45",
       "Tegne/puslespill: 09:00 - 10:00",
       "Leseøkt: 10:15 - 10:45",
       "Ryddetid: 10:45 - 11:00",
-      "Lunsj: 11:00, dagens varmmat: Pasta",
+      "Lunsj: 11:00",
       "Sovetid: 11:30",
       "Stå opp og spise matpakke: 13:30",
-      "Leke ute i snøen kl. 14:30",
+      "Utelek: 14:30",
     ],
   },
 ];
 
 export default function EmployeeHomeScreen() {
   const router = useRouter();
-  const [statuses, setStatuses] = useState<Record<string, ChildStatus>>({});
+  const [user, setUser] = useState<UserResponseDto | null>(null);
+  const [staffProfile, setStaffProfile] = useState<StaffResponseDto | null>(null);
+  const [kindergarten, setKindergarten] = useState<KindergartenResponseDto | null>(null);
+  const [activeCheckins, setActiveCheckins] = useState<CheckerResponseDto[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  /**
-   * TODO (BACKEND):
-   * - Erstatt AsyncStorage med API-kall
-   * - Endepunkt bør returnere status per barn for avdelingen
-   * - Fjern CHECKIN_STORAGE_KEY når backend er koblet
-   */
-  const loadStatuses = useCallback(async () => {
-    const stored = await AsyncStorage.getItem(CHECKIN_STORAGE_KEY);
-    setStatuses(stored ? JSON.parse(stored) : {});
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+
+      if (currentUser?.profileId) {
+        try {
+          const staff = await staffApi.getCurrentStaff(currentUser.profileId);
+          setStaffProfile(staff);
+
+          if (staff.kindergartenId) {
+            try {
+              const kg = await kindergartenApi.getKindergarten(staff.kindergartenId);
+              setKindergarten(kg);
+            } catch (kgErr) {
+              console.log("Feil ved uthenting av barnehage:", kgErr);
+            }
+          }
+        } catch (staffErr) {
+          console.log("Feil ved uthenting av ansattprofil:", staffErr);
+        }
+      }
+
+      // Get active check-ins
+      try {
+        const active = await checkerApi.getActive();
+        setActiveCheckins(active);
+      } catch (checkinErr) {
+        console.log("Feil ved uthenting av innsjekking:", checkinErr);
+      }
+    } catch (err) {
+      console.log("Feil ved lasting av data:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadStatuses();
-    }, [loadStatuses])
+      loadData();
+    }, [loadData])
   );
 
-  const presentCount = Object.values(statuses).filter((s) => s.status === "INN").length;
-  const pickedUpCount = Object.values(statuses).filter((s) => s.status === "HENTET").length;
-  const sickCount = Object.values(statuses).filter((s) => s.status === "SYK").length;
-  const vacationCount = Object.values(statuses).filter((s) => s.status === "FERIE").length;
+  // Calculate counts from active check-ins
+  const presentCount = activeCheckins.length;
+  // These would need backend support for sick/vacation status
+  const pickedUpCount = 0;
+  const sickCount = 0;
+  const vacationCount = 0;
+
+  const staffName = staffProfile
+    ? staffProfile.firstName
+    : user?.fullName?.split(" ")[0] ?? "Ansatt";
+  const kindergartenName = kindergarten?.name ?? "Barnehage";
+  const isBoss = user?.role === "BOSS";
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: Colors.background }}>
+        <ActivityIndicator size="large" color={Colors.primaryBlue} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={EmployeeHomeStyles.scrollContent}>
-      <Text style={EmployeeHomeStyles.bhgTitle}>Eventyrhagen Barnehage</Text>
+      <Text style={EmployeeHomeStyles.bhgTitle}>{kindergartenName}</Text>
 
       <View style={EmployeeHomeStyles.employeeCard}>
-        <Text style={EmployeeHomeStyles.employeeGreeting}>Hei {MOCK_EMPLOYEE.name}!</Text>
-        <Text style={EmployeeHomeStyles.employeeSub}>{MOCK_EMPLOYEE.department}</Text>
+        <Text style={EmployeeHomeStyles.employeeGreeting}>Hei {staffName}!</Text>
+        {isBoss && (
+          <View style={{ backgroundColor: Colors.primaryBlue, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginTop: 4, alignSelf: "flex-start" }}>
+            <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Daglig leder</Text>
+          </View>
+        )}
       </View>
 
       <View style={EmployeeHomeStyles.quickActionsRow}>
@@ -103,7 +153,7 @@ export default function EmployeeHomeScreen() {
 
       <View style={EmployeeHomeStyles.statusCard}>
         <Text style={EmployeeHomeStyles.statusTitle}>
-          Status for {MOCK_EMPLOYEE.department}
+          Dagens status
         </Text>
 
         <View style={EmployeeHomeStyles.statusRow}>
@@ -142,6 +192,37 @@ export default function EmployeeHomeScreen() {
           </View>
         </View>
       </View>
+
+      {/* Boss Admin Section */}
+      {isBoss && (
+        <View style={EmployeeHomeStyles.statusCard}>
+          <Text style={EmployeeHomeStyles.statusTitle}>Admin-funksjoner</Text>
+
+          <Pressable
+            style={[EmployeeHomeStyles.primaryBtn, { marginBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }]}
+            onPress={() => router.push("/(staff)/admin/kindergarten-settings")}
+          >
+            <Ionicons name="settings-outline" size={18} color={Colors.text} />
+            <Text style={EmployeeHomeStyles.primaryBtnText}>Barnehageinnstillinger</Text>
+          </Pressable>
+
+          <Pressable
+            style={[EmployeeHomeStyles.primaryBtn, { marginBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }]}
+            onPress={() => router.push("/(staff)/admin/manage-groups")}
+          >
+            <Ionicons name="people-outline" size={18} color={Colors.text} />
+            <Text style={EmployeeHomeStyles.primaryBtnText}>Administrer grupper</Text>
+          </Pressable>
+
+          <Pressable
+            style={[EmployeeHomeStyles.primaryBtn, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }]}
+            onPress={() => router.push("/(staff)/admin/manage-staff")}
+          >
+            <Ionicons name="person-outline" size={18} color={Colors.text} />
+            <Text style={EmployeeHomeStyles.primaryBtnText}>Administrer ansatte</Text>
+          </Pressable>
+        </View>
+      )}
 
       {MOCK_AGENDA.map((agenda) => (
         <View key={agenda.title} style={EmployeeHomeStyles.agendaCard}>
