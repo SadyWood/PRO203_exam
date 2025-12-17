@@ -1,41 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {Platform} from "react-native";
+import { apiFetch, apiPost, API_BASE_URL } from "./api";
+import {
+    UserResponseDto,
+    LoginResponseDto,
+    RegistrationRole,
+    CompleteRegistrationDto,
+} from "./types/auth"
 
-const API_BASE_URL = Platform.OS === "android"
-? "http://10.0.2.2:8080"
-    : "http://localhost:8080";
-
-export interface UserResponseDto {
-  id: string;
-  fullName: string;
-  email: string;
-  role: "PARENT" | "STAFF" | "ADMIN" | "BOSS";
-  profilePictureUrl?: string;
-  profileId?: string | null;
-  phoneNumber?: string | null;
-  address?: string | null;
-  employeeId?: string | null;
-  position?: string | null;
-}
-
-export interface LoginResponseDto {
-  token: string;
-  user: UserResponseDto;
-  isNewUser?: boolean;
-  needsRegistration?: boolean;
-}
-
-export type RegistrationRole = "PARENT" | "STAFF";
-
-export interface CompleteRegistrationDto {
-  role: RegistrationRole;
-  firstName: string;
-  lastName: string;
-  phoneNumber?: string;
-  address?: string;
-  employeeId?: string;
-  position?: string;
-}
 
 function normalizeLoginResponse(json: any): LoginResponseDto {
   return {
@@ -47,36 +18,38 @@ function normalizeLoginResponse(json: any): LoginResponseDto {
   };
 }
 
+// Google login - public endpoint (no JWT needed)
 export async function loginWithGoogle(idToken: string): Promise<LoginResponseDto> {
-  const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ idToken }),
-  });
+    const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+    });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.log("Login error response:", text);
-
-    let message = "Feil ved innlogging.";
-    try {
-      const errJson = JSON.parse(text);
-      if (errJson.message) message = errJson.message;
-    } catch {
-
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        let message = "Login failed.";
+        try {
+            const errJson = JSON.parse(text);
+            if (errJson.message) message = errJson.message;
+        } catch {}
+        throw new Error(message);
     }
-    throw new Error(message);
-  }
 
-  const json = await res.json();
-  const loginResponse = normalizeLoginResponse(json);
+    const json = await res.json();
 
-  await AsyncStorage.setItem("authToken", loginResponse.token);
-  await AsyncStorage.setItem("currentUser", JSON.stringify(loginResponse.user));
+    const loginResponse: LoginResponseDto = {
+        token: json.token,
+        user: json.user,
+        isNewUser: json.isNewUser,
+        needsRegistration: json.needsRegistration ?? json.isNewUser ?? false,
+    };
 
-  return loginResponse;
+    // Store token and user
+    await AsyncStorage.setItem("authToken", loginResponse.token);
+    await AsyncStorage.setItem("currentUser", JSON.stringify(loginResponse.user));
+
+    return loginResponse;
 }
 
 export async function fetchCurrentUser(endpoint: string, options: RequestInit = {}): Promise<Response> {
@@ -106,78 +79,55 @@ export async function fetchCurrentUser(endpoint: string, options: RequestInit = 
   return res;
 }
 
+// Get current user - requires JWT
 export async function getCurrentUser(): Promise<UserResponseDto | null> {
-    const token = await AsyncStorage.getItem("authToken");
-    if (!token) return null;
-
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-
-    if (!res.ok) {
-        console.log("fetchCurrentUser status:", res.status);
-        if (res.status === 401 || res.status === 403) {
-            await AsyncStorage.removeItem("authToken");
-            await AsyncStorage.removeItem("currentUser");
-        }
+    try {
+        const user = await apiFetch<UserResponseDto>("/api/auth/me");
+        await AsyncStorage.setItem("currentUser", JSON.stringify(user));
+        return user;
+    } catch (error) {
+        console.error("getCurrentUser error:", error);
         return null;
     }
+}
 
-    const json = await res.json();
-    const user = json as UserResponseDto;
+// Complete registration - requires JWT
+export async function completeRegistration(
+    role: RegistrationRole,
+    data: CompleteRegistrationDto
+): Promise<UserResponseDto> {
+    const user = await apiPost<UserResponseDto>(
+        `/api/auth/complete-registration/${role.toLowerCase()}`,
+        data
+    );
 
     await AsyncStorage.setItem("currentUser", JSON.stringify(user));
-
     return user;
 }
 
-export async function completeRegistration(
-  data: CompleteRegistrationDto
-): Promise<UserResponseDto> {
-  const token = await AsyncStorage.getItem("authToken");
-  if (!token) {
-    throw new Error("Ingen auth-token funnet. Logg inn på nytt.");
-  }
+// Accept Terms of Service - requires JWT
+export async function acceptTos(tosVersion: string = "1.0"): Promise<void> {
+    await apiPost("/api/auth/accept-tos", { tosVersion });
+}
 
-  const userJson = await AsyncStorage.getItem("currentUser");
-  if(!userJson){
-    throw new Error("Ingen brukerdata funnet. Logg inn på nytt.");
-  }
-  const usera = JSON.parse(userJson);
-  const userId = usera.id
-
-  const res = await fetch(`${API_BASE_URL}/api/auth/complete-registration/${userId}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    console.log("Complete registration error:", text);
-    let message = "Feil ved registrering.";
+// Get cached user from storage - no API call
+export async function getCachedUser(): Promise<UserResponseDto | null> {
+    const userStr = await AsyncStorage.getItem("currentUser");
+    if (!userStr) return null;
     try {
-      const errJson = JSON.parse(text);
-      if (errJson.message) message = errJson.message;
+        return JSON.parse(userStr) as UserResponseDto;
     } catch {
-
+        return null;
     }
-    throw new Error(message);
-  }
+}
 
-  const user = (await res.json()) as UserResponseDto;
-
-  await AsyncStorage.setItem("currentUser", JSON.stringify(user));
-
-  return user;
+// Check if user is authenticated
+export async function isAuthenticated(): Promise<boolean> {
+    const token = await AsyncStorage.getItem("authToken");
+    return !!token;
 }
 
 export async function logout(): Promise<void> {
-  await AsyncStorage.removeItem("authToken");
-  await AsyncStorage.removeItem("currentUser");
+    await AsyncStorage.removeItem("authToken");
+    await AsyncStorage.removeItem("currentUser");
 }

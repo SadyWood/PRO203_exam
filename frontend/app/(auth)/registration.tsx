@@ -9,7 +9,11 @@ import { KeyboardAvoidingView,Platform,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { completeRegistration,CompleteRegistrationDto,RegistrationRole,} from "@/services/authApi";
+import {
+    completeRegistration,
+    CompleteRegistrationDto,
+    RegistrationRole
+} from "@/services/authApi";
 import { Colors } from "@/constants/colors";
 
 type Params = {
@@ -60,34 +64,34 @@ export default function CompleteRegistrationScreen() {
   }
 
   async function handleSubmit() {
-    if (role === null) {
-      setErrorMsg("Velg om du er forelder eller ansatt.");
-      return;
-    }
+      if (!validate()) return;
+      if (role === null) {
+          setErrorMsg("Velg om du er forelder eller ansatt.");
+          return;
+      }
 
-    const payload: CompleteRegistrationDto = {
-      role,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      phoneNumber: phoneNumber.trim() || undefined,
-      address: role === "PARENT" ? address.trim() || undefined : undefined,
-      employeeId:
-        role === "STAFF" ? employeeId.trim() || undefined : undefined,
-      position: role === "STAFF" ? position.trim() || undefined : undefined,
-    };
+      const payload: CompleteRegistrationDto = {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phoneNumber: phoneNumber.trim() || undefined,
+          address: role === "PARENT" ? address.trim() || undefined : undefined,
+          employeeId: role === "STAFF" ? employeeId.trim() || undefined : undefined,
+          position: role === "STAFF" ? position.trim() || undefined : undefined,
+      };
 
-    setIsSubmitting(true);
-    setErrorMsg(null);
+      setIsSubmitting(true);
+      setErrorMsg(null);
 
-    try {
-      await completeRegistration(payload);
-      router.replace("/(tabs)");
-    } catch (err: any) {
-      console.error(err);
-      setErrorMsg(err?.message ?? "Noe gikk galt. Prøv igjen.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      try {
+          // Pass role as first argument
+          await completeRegistration(role, payload);
+          router.replace("/(tabs)");
+      } catch (err: any) {
+          console.error(err);
+          setErrorMsg(err?.message ?? "Noe gikk galt. Prøv igjen.");
+      } finally {
+          setIsSubmitting(false);
+      }
   }
 
   function RoleButton({

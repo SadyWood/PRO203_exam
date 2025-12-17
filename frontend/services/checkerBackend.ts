@@ -1,52 +1,30 @@
+import { apiGet, apiPost } from "./api";
 import {
     CheckInDto,
     CheckOutDto,
     CheckerResponseDto,
-  } from "./types/checker";
-  
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8080";
-  
-  async function request<T>(path: string, options?: RequestInit): Promise<T> {
-    const res = await fetch(`${BASE_URL}${path}`, {
-      headers: {
-        "Content-Type": "application/json",
-        // TODO: legg til Authorization-header med JWT når auth er på plass
-        ...(options?.headers ?? {}),
-      },
-      ...options,
-    });
-  
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(
-        text || `Feil fra backend (${res.status} ${res.statusText}) på ${path}`,
-      );
-    }
-  
-    return (await res.json()) as T;
-  }
-  
-  export const checkerBackend = {
+} from "./types/checker";
+
+
+export const checkerBackend = {
+    // Check in a child
     checkIn(dto: CheckInDto): Promise<CheckerResponseDto> {
-      return request<CheckerResponseDto>("/api/checker/checkin", {
-        method: "POST",
-        body: JSON.stringify(dto),
-      });
+        return apiPost<CheckerResponseDto>("/api/checker/check-in", dto);
     },
-  
+
+    // Check out a child
     checkOut(dto: CheckOutDto): Promise<CheckerResponseDto> {
-      return request<CheckerResponseDto>("/api/checker/checkout", {
-        method: "POST",
-        body: JSON.stringify(dto),
-      });
+        return apiPost<CheckerResponseDto>("/api/checker/check-out", dto);
     },
-  
+
+    // Get all currently checked-in children
     getActive(): Promise<CheckerResponseDto[]> {
-      return request<CheckerResponseDto[]>("/api/checker/active");
+        return apiGet<CheckerResponseDto[]>("/api/checker/active");
     },
-  
+
+    // Get check-in/out history for a child
     getChildHistory(childId: string): Promise<CheckerResponseDto[]> {
-      return request<CheckerResponseDto[]>(`/api/checker/history/${childId}`);
+        return apiGet<CheckerResponseDto[]>(`/api/checker/history/${childId}`);
     },
-  };
+};
   
