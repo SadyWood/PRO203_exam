@@ -10,11 +10,11 @@ import { KeyboardAvoidingView,Platform,
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    completeRegistration,
     CompleteRegistrationDto,
     RegistrationRole
-} from "@/services/authApi";
+} from "@/services/types/auth";
 import { Colors } from "@/constants/colors";
+import {completeRegistration} from "@/services/authApi";
 
 type Params = {
   fullName?: string;
