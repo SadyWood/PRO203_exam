@@ -122,12 +122,14 @@ export default function EmployeeHomeScreen() {
       </View>
 
       <View style={EmployeeHomeStyles.quickActionsRow}>
-        <Pressable
-          style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnNeutral]}
-          onPress={() => router.push("/(staff)/employee-diaper-nap")}
-        >
-          <Text style={EmployeeHomeStyles.primaryBtnText}>Bleieskift & søvn</Text>
-        </Pressable>
+        {!isBoss && (
+          <Pressable
+            style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnNeutral]}
+            onPress={() => router.push("/(staff)/employee-diaper-nap")}
+          >
+            <Text style={EmployeeHomeStyles.primaryBtnText}>Bleieskift & søvn</Text>
+          </Pressable>
+        )}
 
         <Pressable
           style={[EmployeeHomeStyles.primaryBtn, EmployeeHomeStyles.primaryBtnPrimary]}
