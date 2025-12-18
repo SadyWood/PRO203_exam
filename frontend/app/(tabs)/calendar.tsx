@@ -2,9 +2,7 @@ import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
-  Modal,
   ScrollView,
   ActivityIndicator,
   Platform,
@@ -15,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { Colors } from "@/constants/colors";
+import { CalendarStyles } from "@/styles";
 import { calendarApi, CalendarEventResponseDto } from "@/services/staffApi";
 
 const API_BASE_URL = Platform.OS === "android"
@@ -39,7 +38,7 @@ const getMonthDays = (dateId: string) => {
   return result;
 };
 
-// Calendar theme
+// Calendar theme for flash-calendar component
 const calendarTheme: CalendarTheme = {
   itemDay: {
     idle: ({ isPressed }) => ({
@@ -95,7 +94,6 @@ export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState<string>(todayId);
   const [events, setEvents] = useState<CalendarEventResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [kindergartenId, setKindergartenId] = useState<string | null>(null);
   const [childGroupName, setChildGroupName] = useState<string>("");
 
   // Load events when screen comes into focus
@@ -127,7 +125,6 @@ export default function CalendarScreen() {
         if (children.length > 0) {
           const firstChild = children[0];
           const kgId = firstChild.kindergartenId;
-          setKindergartenId(kgId);
           setChildGroupName(firstChild.groupName || "");
 
           if (kgId) {
@@ -206,50 +203,50 @@ export default function CalendarScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={CalendarStyles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primaryBlue} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={CalendarStyles.container}>
       {/* Header */}
-      <View style={styles.headerWrapper}>
-        <Text style={styles.depText}>
+      <View style={CalendarStyles.headerWrapper}>
+        <Text style={CalendarStyles.depText}>
           {childGroupName ? `Avdeling ${childGroupName}` : "Kalender"}
         </Text>
       </View>
 
       {/* Month navigation */}
-      <View style={styles.monthNav}>
+      <View style={CalendarStyles.monthNav}>
         <TouchableOpacity onPress={() => navigateMonth("prev")}>
           <Ionicons name="chevron-back" size={24} color={Colors.primaryBlue} />
         </TouchableOpacity>
-        <Text style={styles.monthText}>{monthName}</Text>
+        <Text style={CalendarStyles.monthText}>{monthName}</Text>
         <TouchableOpacity onPress={() => navigateMonth("next")}>
           <Ionicons name="chevron-forward" size={24} color={Colors.primaryBlue} />
         </TouchableOpacity>
       </View>
 
       {/* View mode toggle */}
-      <View style={styles.toggleRow}>
+      <View style={CalendarStyles.toggleRow}>
         <TouchableOpacity
-          style={[styles.toggleButton, viewMode === "grid" && styles.toggleButtonActivate]}
+          style={[CalendarStyles.toggleButton, viewMode === "grid" && CalendarStyles.toggleButtonActive]}
           onPress={() => setViewMode("grid")}
           activeOpacity={0.7}
         >
-          <Text style={[styles.toggleButtonText, viewMode === "grid" && styles.toggleButtonTextActivate]}>
+          <Text style={[CalendarStyles.toggleButtonText, viewMode === "grid" && CalendarStyles.toggleButtonTextActive]}>
             Kalender
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.toggleButton, viewMode === "list" && styles.toggleButtonActivate]}
+          style={[CalendarStyles.toggleButton, viewMode === "list" && CalendarStyles.toggleButtonActive]}
           onPress={() => setViewMode("list")}
           activeOpacity={0.7}
         >
-          <Text style={[styles.toggleButtonText, viewMode === "list" && styles.toggleButtonTextActivate]}>
+          <Text style={[CalendarStyles.toggleButtonText, viewMode === "list" && CalendarStyles.toggleButtonTextActive]}>
             Liste
           </Text>
         </TouchableOpacity>
@@ -257,8 +254,8 @@ export default function CalendarScreen() {
 
       {/* Selected date events preview (grid view only) */}
       {viewMode === "grid" && (
-        <View style={styles.eventPreview}>
-          <Text style={styles.eventPreviewTitle}>
+        <View style={CalendarStyles.eventPreview}>
+          <Text style={CalendarStyles.eventPreviewTitle}>
             {new Date(selectedDate).toLocaleDateString("nb-NO", {
               weekday: "long",
               day: "numeric",
@@ -266,24 +263,24 @@ export default function CalendarScreen() {
             })}
           </Text>
           {selectedDateEvents.length === 0 ? (
-            <Text style={styles.noEventsText}>Ingen hendelser denne dagen</Text>
+            <Text style={CalendarStyles.noEventsText}>Ingen hendelser denne dagen</Text>
           ) : (
             selectedDateEvents.map((event) => (
-              <View key={event.id} style={styles.eventItem}>
-                <View style={styles.eventItemRow}>
+              <View key={event.id} style={CalendarStyles.eventItem}>
+                <View style={CalendarStyles.eventItemRow}>
                   {event.isSpecialOccasion && (
                     <Ionicons name="star" size={14} color={Colors.yellow} style={{ marginRight: 4 }} />
                   )}
-                  <Text style={styles.eventItemTitle}>{event.title}</Text>
+                  <Text style={CalendarStyles.eventItemTitle}>{event.title}</Text>
                 </View>
                 {(event.startTime || event.groupName) && (
-                  <Text style={styles.eventItemTime}>
+                  <Text style={CalendarStyles.eventItemTime}>
                     {event.startTime || ""}{event.startTime && event.endTime ? ` - ${event.endTime}` : ""}
                     {event.groupName ? ` | ${event.groupName}` : " | Alle"}
                   </Text>
                 )}
                 {event.description && (
-                  <Text style={styles.eventItemDesc} numberOfLines={2}>{event.description}</Text>
+                  <Text style={CalendarStyles.eventItemDesc} numberOfLines={2}>{event.description}</Text>
                 )}
               </View>
             ))
@@ -304,7 +301,7 @@ export default function CalendarScreen() {
           theme={calendarTheme}
         />
       ) : (
-        <ScrollView style={styles.listWrapper}>
+        <ScrollView style={CalendarStyles.listWrapper}>
           {monthDays.map((day) => {
             const dateId = day.id;
             const dayEvents = events.filter((e) => e.eventDate === dateId);
@@ -315,22 +312,22 @@ export default function CalendarScreen() {
               <TouchableOpacity
                 key={dateId}
                 style={[
-                  styles.listRow,
-                  hasEvents && styles.listRowWithEvents,
-                  hasSpecial && styles.listRowSpecial,
-                  dateId === selectedDate && styles.listRowSelected,
+                  CalendarStyles.listRow,
+                  hasEvents && CalendarStyles.listRowWithEvents,
+                  hasSpecial && CalendarStyles.listRowSpecial,
+                  dateId === selectedDate && CalendarStyles.listRowSelected,
                 ]}
                 onPress={() => setSelectedDate(dateId)}
                 activeOpacity={0.7}
               >
-                <Text style={styles.listDayNumber}>{day.label}</Text>
-                <View style={styles.listContent}>
+                <Text style={CalendarStyles.listDayNumber}>{day.label}</Text>
+                <View style={CalendarStyles.listContent}>
                   {dayEvents.map((event) => (
-                    <View key={event.id} style={styles.listEventRow}>
+                    <View key={event.id} style={CalendarStyles.listEventRow}>
                       {event.isSpecialOccasion && (
                         <Ionicons name="star" size={12} color={Colors.yellow} />
                       )}
-                      <Text style={styles.listEventText} numberOfLines={1}>
+                      <Text style={CalendarStyles.listEventText} numberOfLines={1}>
                         {event.startTime ? `${event.startTime} - ` : ""}
                         {event.title}
                         {event.groupName ? ` (${event.groupName})` : ""}
@@ -346,153 +343,3 @@ export default function CalendarScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 26,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.background,
-  },
-  headerWrapper: {
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  depText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  monthNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    gap: 16,
-  },
-  monthText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-    textTransform: "capitalize",
-    minWidth: 150,
-    textAlign: "center",
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignSelf: "center",
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 99,
-    padding: 4,
-    marginBottom: 12,
-  },
-  toggleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 99,
-  },
-  toggleButtonActivate: {
-    backgroundColor: Colors.primaryBlue,
-  },
-  toggleButtonText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: Colors.textMuted,
-  },
-  toggleButtonTextActivate: {
-    color: Colors.text,
-    fontWeight: "700",
-  },
-  eventPreview: {
-    marginBottom: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: Colors.primaryLightBlue,
-  },
-  eventPreviewTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 6,
-    textTransform: "capitalize",
-  },
-  noEventsText: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    fontStyle: "italic",
-  },
-  eventItem: {
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primaryBlue,
-  },
-  eventItemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  eventItemTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  eventItemTime: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  eventItemDesc: {
-    fontSize: 11,
-    color: Colors.text,
-    marginTop: 2,
-  },
-  listWrapper: {
-    flex: 1,
-    marginTop: 4,
-  },
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primaryLightBlue,
-    backgroundColor: Colors.primaryBlue,
-  },
-  listRowWithEvents: {
-    backgroundColor: Colors.green,
-  },
-  listRowSpecial: {
-    backgroundColor: Colors.yellow,
-  },
-  listRowSelected: {
-    borderWidth: 1,
-    borderColor: Colors.text,
-  },
-  listDayNumber: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: Colors.text,
-    width: 30,
-  },
-  listContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  listEventRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  listEventText: {
-    fontSize: 12,
-    color: Colors.text,
-  },
-});

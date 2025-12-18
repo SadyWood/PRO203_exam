@@ -1,8 +1,7 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   Modal,
   ScrollView,
@@ -10,13 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   Switch,
-  Pressable,
 } from "react-native";
 import { Calendar, toDateId, type CalendarTheme } from "@marceloterreiro/flash-calendar";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Colors } from "@/constants/colors";
+import { CalendarStyles } from "@/styles";
 import { getCurrentUser } from "@/services/authApi";
 import { UserResponseDto } from "@/services/types/auth";
 import {
@@ -29,7 +28,7 @@ import {
   CreateCalendarEventDto,
 } from "@/services/staffApi";
 
-// Calendar theme matching parent calendar
+// Calendar theme for flash-calendar component
 const calendarTheme: CalendarTheme = {
   itemDay: {
     idle: ({ isPressed }) => ({
@@ -341,53 +340,53 @@ export default function EmployeeCalendarScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={CalendarStyles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primaryBlue} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={CalendarStyles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+      <View style={CalendarStyles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={CalendarStyles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Kalender</Text>
+        <Text style={CalendarStyles.headerTitle}>Kalender</Text>
         {canManageEvents && (
-          <TouchableOpacity onPress={() => setIsTemplateModalVisible(true)} style={styles.addButton}>
+          <TouchableOpacity onPress={() => setIsTemplateModalVisible(true)} style={CalendarStyles.addButton}>
             <Ionicons name="add-circle" size={28} color={Colors.primaryBlue} />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Month navigation */}
-      <View style={styles.monthNav}>
+      <View style={CalendarStyles.monthNav}>
         <TouchableOpacity onPress={() => navigateMonth("prev")}>
           <Ionicons name="chevron-back" size={24} color={Colors.primaryBlue} />
         </TouchableOpacity>
-        <Text style={styles.monthText}>{monthName}</Text>
+        <Text style={CalendarStyles.monthText}>{monthName}</Text>
         <TouchableOpacity onPress={() => navigateMonth("next")}>
           <Ionicons name="chevron-forward" size={24} color={Colors.primaryBlue} />
         </TouchableOpacity>
       </View>
 
       {/* View mode toggle */}
-      <View style={styles.toggleRow}>
+      <View style={CalendarStyles.toggleRow}>
         <TouchableOpacity
-          style={[styles.toggleButton, viewMode === "grid" && styles.toggleButtonActive]}
+          style={[CalendarStyles.toggleButton, viewMode === "grid" && CalendarStyles.toggleButtonActive]}
           onPress={() => setViewMode("grid")}
         >
-          <Text style={[styles.toggleButtonText, viewMode === "grid" && styles.toggleButtonTextActive]}>
+          <Text style={[CalendarStyles.toggleButtonText, viewMode === "grid" && CalendarStyles.toggleButtonTextActive]}>
             Kalender
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.toggleButton, viewMode === "list" && styles.toggleButtonActive]}
+          style={[CalendarStyles.toggleButton, viewMode === "list" && CalendarStyles.toggleButtonActive]}
           onPress={() => setViewMode("list")}
         >
-          <Text style={[styles.toggleButtonText, viewMode === "list" && styles.toggleButtonTextActive]}>
+          <Text style={[CalendarStyles.toggleButtonText, viewMode === "list" && CalendarStyles.toggleButtonTextActive]}>
             Liste
           </Text>
         </TouchableOpacity>
@@ -395,9 +394,9 @@ export default function EmployeeCalendarScreen() {
 
       {/* Selected date events preview */}
       {viewMode === "grid" && (
-        <View style={styles.selectedDateEvents}>
-          <View style={styles.selectedDateHeader}>
-            <Text style={styles.selectedDateTitle}>
+        <View style={CalendarStyles.selectedDateEvents}>
+          <View style={CalendarStyles.selectedDateHeader}>
+            <Text style={CalendarStyles.selectedDateTitle}>
               {new Date(selectedDate).toLocaleDateString("nb-NO", {
                 weekday: "long",
                 day: "numeric",
@@ -411,21 +410,21 @@ export default function EmployeeCalendarScreen() {
             )}
           </View>
           {selectedDateEvents.length === 0 ? (
-            <Text style={styles.noEventsText}>Ingen hendelser denne dagen</Text>
+            <Text style={CalendarStyles.noEventsText}>Ingen hendelser denne dagen</Text>
           ) : (
             selectedDateEvents.map((event) => (
               <TouchableOpacity
                 key={event.id}
-                style={styles.eventItem}
+                style={CalendarStyles.eventItem}
                 onPress={() => canManageEvents && openEditEventModal(event)}
               >
-                <View style={styles.eventItemLeft}>
+                <View style={CalendarStyles.eventItemLeft}>
                   {event.isSpecialOccasion && (
                     <Ionicons name="star" size={14} color={Colors.yellow} style={{ marginRight: 4 }} />
                   )}
-                  <Text style={styles.eventItemTitle}>{event.title}</Text>
+                  <Text style={CalendarStyles.eventItemTitle}>{event.title}</Text>
                 </View>
-                <Text style={styles.eventItemTime}>
+                <Text style={CalendarStyles.eventItemTime}>
                   {event.startTime || ""} {event.groupName ? `| ${event.groupName}` : "| Alle"}
                 </Text>
               </TouchableOpacity>
@@ -447,7 +446,7 @@ export default function EmployeeCalendarScreen() {
           theme={calendarTheme}
         />
       ) : (
-        <ScrollView style={styles.listWrapper}>
+        <ScrollView style={CalendarStyles.listWrapper}>
           {monthDays.map((day) => {
             const dateId = day.id;
             const dayEvents = events.filter((e) => e.eventDate === dateId);
@@ -458,21 +457,21 @@ export default function EmployeeCalendarScreen() {
               <TouchableOpacity
                 key={dateId}
                 style={[
-                  styles.listRow,
-                  hasEvents && styles.listRowWithEvents,
-                  hasSpecial && styles.listRowSpecial,
-                  dateId === selectedDate && styles.listRowSelected,
+                  CalendarStyles.listRow,
+                  hasEvents && CalendarStyles.listRowWithEvents,
+                  hasSpecial && CalendarStyles.listRowSpecial,
+                  dateId === selectedDate && CalendarStyles.listRowSelected,
                 ]}
                 onPress={() => setSelectedDate(dateId)}
               >
-                <Text style={styles.listDayNumber}>{day.label}</Text>
-                <View style={styles.listContent}>
+                <Text style={CalendarStyles.listDayNumber}>{day.label}</Text>
+                <View style={CalendarStyles.listContent}>
                   {dayEvents.map((event) => (
-                    <View key={event.id} style={styles.listEventRow}>
+                    <View key={event.id} style={CalendarStyles.listEventRow}>
                       {event.isSpecialOccasion && (
                         <Ionicons name="star" size={12} color={Colors.yellow} />
                       )}
-                      <Text style={styles.listEventText} numberOfLines={1}>
+                      <Text style={CalendarStyles.listEventText} numberOfLines={1}>
                         {event.startTime ? `${event.startTime} - ` : ""}
                         {event.title}
                       </Text>
@@ -502,27 +501,27 @@ export default function EmployeeCalendarScreen() {
         animationType="fade"
         onRequestClose={() => setIsTemplateModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Velg mal eller lag ny</Text>
+        <View style={CalendarStyles.modalBackdrop}>
+          <View style={CalendarStyles.modalCard}>
+            <Text style={CalendarStyles.modalTitle}>Velg mal eller lag ny</Text>
             <ScrollView style={{ maxHeight: 300 }}>
               {EVENT_TEMPLATES.map((template, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={styles.templateItem}
+                  style={CalendarStyles.templateItem}
                   onPress={() => applyTemplate(template)}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     {template.isSpecialOccasion && (
                       <Ionicons name="star" size={14} color={Colors.yellow} style={{ marginRight: 6 }} />
                     )}
-                    <Text style={styles.templateTitle}>{template.title}</Text>
+                    <Text style={CalendarStyles.templateTitle}>{template.title}</Text>
                   </View>
-                  <Text style={styles.templateDesc}>{template.description}</Text>
+                  <Text style={CalendarStyles.templateDesc}>{template.description}</Text>
                 </TouchableOpacity>
               ))}
               <TouchableOpacity
-                style={[styles.templateItem, { borderTopWidth: 1, borderTopColor: Colors.primaryBlue }]}
+                style={[CalendarStyles.templateItem, { borderTopWidth: 1, borderTopColor: Colors.primaryBlue }]}
                 onPress={() => {
                   setIsTemplateModalVisible(false);
                   openNewEventModal();
@@ -530,17 +529,17 @@ export default function EmployeeCalendarScreen() {
               >
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Ionicons name="create-outline" size={14} color={Colors.primaryBlue} style={{ marginRight: 6 }} />
-                  <Text style={[styles.templateTitle, { color: Colors.primaryBlue }]}>
+                  <Text style={[CalendarStyles.templateTitle, { color: Colors.primaryBlue }]}>
                     Lag ny hendelse fra bunn
                   </Text>
                 </View>
               </TouchableOpacity>
             </ScrollView>
             <TouchableOpacity
-              style={styles.closeButton}
+              style={CalendarStyles.closeButton}
               onPress={() => setIsTemplateModalVisible(false)}
             >
-              <Text style={styles.closeButtonText}>Lukk</Text>
+              <Text style={CalendarStyles.closeButtonText}>Lukk</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -553,13 +552,13 @@ export default function EmployeeCalendarScreen() {
         animationType="fade"
         onRequestClose={() => setIsEventModalVisible(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={CalendarStyles.modalBackdrop}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>
+            <View style={CalendarStyles.modalCard}>
+              <Text style={CalendarStyles.modalTitle}>
                 {editingEvent ? "Rediger hendelse" : "Ny hendelse"}
               </Text>
-              <Text style={styles.modalSubtitle}>
+              <Text style={CalendarStyles.modalSubtitle}>
                 {new Date(selectedDate).toLocaleDateString("nb-NO", {
                   weekday: "long",
                   day: "numeric",
@@ -568,18 +567,18 @@ export default function EmployeeCalendarScreen() {
                 })}
               </Text>
 
-              <Text style={styles.inputLabel}>Tittel *</Text>
+              <Text style={CalendarStyles.inputLabel}>Tittel *</Text>
               <TextInput
-                style={styles.input}
+                style={CalendarStyles.input}
                 value={eventTitle}
                 onChangeText={setEventTitle}
                 placeholder="F.eks. Turdag til skogen"
                 placeholderTextColor={Colors.textMuted}
               />
 
-              <Text style={styles.inputLabel}>Beskrivelse</Text>
+              <Text style={CalendarStyles.inputLabel}>Beskrivelse</Text>
               <TextInput
-                style={[styles.input, { minHeight: 60 }]}
+                style={[CalendarStyles.input, { minHeight: 60 }]}
                 value={eventDescription}
                 onChangeText={setEventDescription}
                 placeholder="Valgfri beskrivelse"
@@ -587,11 +586,11 @@ export default function EmployeeCalendarScreen() {
                 multiline
               />
 
-              <View style={styles.timeRow}>
+              <View style={CalendarStyles.timeRow}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.inputLabel}>Starttid</Text>
+                  <Text style={CalendarStyles.inputLabel}>Starttid</Text>
                   <TextInput
-                    style={styles.input}
+                    style={CalendarStyles.input}
                     value={eventStartTime}
                     onChangeText={setEventStartTime}
                     placeholder="HH:mm"
@@ -599,9 +598,9 @@ export default function EmployeeCalendarScreen() {
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.inputLabel}>Sluttid</Text>
+                  <Text style={CalendarStyles.inputLabel}>Sluttid</Text>
                   <TextInput
-                    style={styles.input}
+                    style={CalendarStyles.input}
                     value={eventEndTime}
                     onChangeText={setEventEndTime}
                     placeholder="HH:mm"
@@ -610,38 +609,38 @@ export default function EmployeeCalendarScreen() {
                 </View>
               </View>
 
-              <Text style={styles.inputLabel}>Sted</Text>
+              <Text style={CalendarStyles.inputLabel}>Sted</Text>
               <TextInput
-                style={styles.input}
+                style={CalendarStyles.input}
                 value={eventLocation}
                 onChangeText={setEventLocation}
                 placeholder="Valgfritt"
                 placeholderTextColor={Colors.textMuted}
               />
 
-              <Text style={styles.inputLabel}>Gruppe</Text>
-              <View style={styles.groupSelector}>
+              <Text style={CalendarStyles.inputLabel}>Gruppe</Text>
+              <View style={CalendarStyles.groupSelector}>
                 <TouchableOpacity
-                  style={[styles.groupOption, eventGroupId === null && styles.groupOptionSelected]}
+                  style={[CalendarStyles.groupOption, eventGroupId === null && CalendarStyles.groupOptionSelected]}
                   onPress={() => setEventGroupId(null)}
                 >
-                  <Text style={styles.groupOptionText}>Alle grupper</Text>
+                  <Text style={CalendarStyles.groupOptionText}>Alle grupper</Text>
                 </TouchableOpacity>
                 {groups.map((group) => (
                   <TouchableOpacity
                     key={group.id}
-                    style={[styles.groupOption, eventGroupId === group.id && styles.groupOptionSelected]}
+                    style={[CalendarStyles.groupOption, eventGroupId === group.id && CalendarStyles.groupOptionSelected]}
                     onPress={() => setEventGroupId(group.id)}
                   >
-                    <Text style={styles.groupOptionText}>{group.name}</Text>
+                    <Text style={CalendarStyles.groupOptionText}>{group.name}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <View style={styles.switchRow}>
+              <View style={CalendarStyles.switchRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.inputLabel}>Spesiell anledning</Text>
-                  <Text style={styles.switchHint}>Turer, bursdager, planleggingsdager osv.</Text>
+                  <Text style={CalendarStyles.inputLabel}>Spesiell anledning</Text>
+                  <Text style={CalendarStyles.switchHint}>Turer, bursdager, planleggingsdager osv.</Text>
                 </View>
                 <Switch
                   value={eventIsSpecial}
@@ -651,23 +650,23 @@ export default function EmployeeCalendarScreen() {
                 />
               </View>
 
-              <View style={styles.modalButtonsRow}>
+              <View style={CalendarStyles.modalButtonsRow}>
                 {editingEvent && (
-                  <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteEvent}>
+                  <TouchableOpacity style={CalendarStyles.deleteButton} onPress={handleDeleteEvent}>
                     <Ionicons name="trash-outline" size={20} color="#fff" />
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
-                  style={styles.cancelButton}
+                  style={CalendarStyles.cancelButton}
                   onPress={() => {
                     setIsEventModalVisible(false);
                     resetForm();
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>Avbryt</Text>
+                  <Text style={CalendarStyles.cancelButtonText}>Avbryt</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSaveEvent}>
-                  <Text style={styles.saveButtonText}>Lagre</Text>
+                <TouchableOpacity style={CalendarStyles.saveButton} onPress={handleSaveEvent}>
+                  <Text style={CalendarStyles.saveButtonText}>Lagre</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -677,298 +676,3 @@ export default function EmployeeCalendarScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  addButton: {
-    padding: 4,
-  },
-  monthNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    gap: 16,
-  },
-  monthText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-    textTransform: "capitalize",
-    minWidth: 150,
-    textAlign: "center",
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignSelf: "center",
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 99,
-    padding: 4,
-    marginBottom: 12,
-  },
-  toggleButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 99,
-  },
-  toggleButtonActive: {
-    backgroundColor: Colors.primaryBlue,
-  },
-  toggleButtonText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: Colors.textMuted,
-  },
-  toggleButtonTextActive: {
-    color: Colors.text,
-    fontWeight: "700",
-  },
-  selectedDateEvents: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  selectedDateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  selectedDateTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text,
-    textTransform: "capitalize",
-  },
-  noEventsText: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    fontStyle: "italic",
-  },
-  eventItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primaryBlue,
-  },
-  eventItemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  eventItemTitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: Colors.text,
-  },
-  eventItemTime: {
-    fontSize: 11,
-    color: Colors.textMuted,
-  },
-  listWrapper: {
-    flex: 1,
-  },
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primaryLightBlue,
-    backgroundColor: Colors.primaryBlue,
-  },
-  listRowWithEvents: {
-    backgroundColor: Colors.green,
-  },
-  listRowSpecial: {
-    backgroundColor: Colors.yellow,
-  },
-  listRowSelected: {
-    borderWidth: 2,
-    borderColor: Colors.text,
-  },
-  listDayNumber: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.text,
-    width: 30,
-  },
-  listContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  listEventRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  listEventText: {
-    fontSize: 12,
-    color: Colors.text,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-  },
-  modalCard: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 12,
-    padding: 16,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginBottom: 16,
-    textTransform: "capitalize",
-  },
-  inputLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 4,
-    marginTop: 8,
-  },
-  input: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: Colors.text,
-    borderWidth: 1,
-    borderColor: Colors.primaryBlue,
-  },
-  timeRow: {
-    flexDirection: "row",
-  },
-  groupSelector: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 4,
-  },
-  groupOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: Colors.primaryBlue,
-  },
-  groupOptionSelected: {
-    backgroundColor: Colors.primaryBlue,
-  },
-  groupOptionText: {
-    fontSize: 12,
-    color: Colors.text,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 12,
-    paddingVertical: 8,
-  },
-  switchHint: {
-    fontSize: 10,
-    color: Colors.textMuted,
-  },
-  modalButtonsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-    marginTop: 20,
-  },
-  deleteButton: {
-    backgroundColor: Colors.red,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  cancelButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.primaryBlue,
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    color: Colors.text,
-    fontWeight: "500",
-  },
-  saveButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.green,
-  },
-  saveButtonText: {
-    fontSize: 14,
-    color: "#111827",
-    fontWeight: "600",
-  },
-  templateItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primaryLightBlue,
-  },
-  templateTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  templateDesc: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  closeButton: {
-    alignSelf: "center",
-    marginTop: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: Colors.primaryBlue,
-  },
-  closeButtonText: {
-    fontSize: 14,
-    color: Colors.text,
-    fontWeight: "500",
-  },
-});

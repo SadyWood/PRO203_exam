@@ -12,6 +12,7 @@ export { ParentCheckinStyles } from "./parentCheckinStyles";
 export { PostsStyles } from "./postsStyles";
 export { EmployeeChildrenStyles } from "./employeeChildrenStyles";
 export { AdminStyles } from "./adminStyles";
+export { CalendarStyles } from "./calendar-styles";
 
 
 
