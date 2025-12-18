@@ -1,20 +1,20 @@
 # PRO203_exam
 
-### Check-kid er et managment system bygget med spring boot og react native med expo. Applikasjonen tilatter managment av roller som parents, staff og boss for håndtering av children, attendance, health data, og kommunikasjon.
+### Check-kid is a kindergarten management system built with spring boot and react native. The applications focus is to give parents and staff a platform that is easy to use for all roles in a kindergarten. 
 
 ### Tech stack:
 -   Java 21
 -   Springboot 5 +
--   PostgreSQL
--   Flyway
--   Spring Security
+-   PostgreSQL - Dual database architecture
+-   Flyway for database migrations
+-   Spring Security + JWT Authentication
 -   Google OAuth 2.0
 -   JUnit 5
 -   React Native
 -   Expo
 -   TypeScript
 
-### Setup
+### Prerequisites for environment
 -   Java 21 +
 -   Maven 3.6 +
 -   PostgreSQL 14 +
@@ -22,17 +22,23 @@
 -   Expo CLI (latest)
 -   Git
 
-**Kjøre følgende komandoer i terminalen:**
--      mvn clean install
--      cd frontend
--      npm install
--      docker compose up -d
-(Viktig å avslutte med docker compose down -v, før ny oppstart)
--      Kjøre backend gjennom IDE eller gjennom mvn spring-boot:run
--      cd frontend om du ikke er der ennå
--      npx expo start -> presse w for web
-(Viktig å forstå at appen er tilpasset mobil løsning, men pågrunn av kombinasjonen av Google OAuth og Expo så har det faktisk ikke gått å sette opp autentisering på denne måten da google sitt oppsett krever en redirect url som starter med "https://, mens expo sin starter med exp:)
--      mvn test, for å kjøre gjennom 5 enkle tester for å teste funksjoner.
+### Quick Start Guide:
+#### Backend:
+Run these commands
+        
+        Please ensure you are not running any old docker images for the project if your are
+        1. mvn clean install
+        2. docker compose down -v - This is to remove any old docker images
+        3. docker compose up -d - Makes a docker image for the project
+        4. mvn spring-boot:run - initialize spring-boot
+        5. mvn test - to run the tests
+#### Frontend:
+Run these commands
+
+        1. cd frontend - For setting working direcory to the frontned
+        2. npm install - Installs the prerequisets
+        3. npx expo start -> Press W for web - Starts expo. Please make sure to run in web mode as there are authentication errors when EMULATING android version due to how google handles expo uri redirects 
+
 
 ## Test flow på frontend siden.
 - Trykke start knapp på start siden.
