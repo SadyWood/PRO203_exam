@@ -14,10 +14,14 @@ import { Colors } from "@/constants/colors";
 import { useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { calendarApi, CalendarEventResponseDto } from "@/services/staffApi";
+import { checkerApi } from "@/services/checkerApi";
 
 const API_BASE_URL = Platform.OS === "android"
     ? "http://10.0.2.2:8080"
     : "http://localhost:8080";
+
+// Status types for check-in
+type CheckInStatus = "NONE" | "PENDING" | "CONFIRMED";
 
 export default function HomeScreen() {
     const router = useRouter();
@@ -27,8 +31,8 @@ export default function HomeScreen() {
     const [kindergartenName, setKindergartenName] = useState<string>("");
     const [todayEvents, setTodayEvents] = useState<CalendarEventResponseDto[]>([]);
     const [loading, setLoading] = useState(true);
-    // Track check-in status for each child by ID
-    const [checkInStatusMap, setCheckInStatusMap] = useState<Record<string, "INN" | "UT" | null>>({});
+    // Track check-in status for each child by ID (from backend)
+    const [checkInStatusMap, setCheckInStatusMap] = useState<Record<string, CheckInStatus>>({});
     const [lastStatusChangeMap, setLastStatusChangeMap] = useState<Record<string, string | null>>({});
 
     const loadData = useCallback(async () => {
@@ -63,19 +67,32 @@ export default function HomeScreen() {
                     const firstChild = childrenData[0];
                     setKindergartenName(firstChild.kindergartenName || "");
 
-                    // Load check-in status for ALL children
-                    const statusMap: Record<string, "INN" | "UT" | null> = {};
+                    // Fetch real check-in status from backend for ALL children
+                    const statusMap: Record<string, CheckInStatus> = {};
                     const timeMap: Record<string, string | null> = {};
 
                     for (const child of childrenData) {
-                        const storedStatus = await AsyncStorage.getItem(`checkin_status_${child.id}`);
-                        const storedTime = await AsyncStorage.getItem(`checkin_time_${child.id}`);
-                        if (storedStatus === "INN" || storedStatus === "UT") {
-                            statusMap[child.id] = storedStatus;
-                        } else {
-                            statusMap[child.id] = null;
+                        try {
+                            const checkInStatus = await checkerApi.getChildStatus(child.id);
+                            if (checkInStatus && checkInStatus.checkInDate) {
+                                // Child is checked in - check if confirmed
+                                const isConfirmed = checkInStatus.droppedOffConfirmedBy !== null;
+                                statusMap[child.id] = isConfirmed ? "CONFIRMED" : "PENDING";
+                                // Format time for display
+                                const checkInTime = new Date(checkInStatus.checkInDate);
+                                timeMap[child.id] = checkInTime.toLocaleTimeString("nb-NO", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                });
+                            } else {
+                                statusMap[child.id] = "NONE";
+                                timeMap[child.id] = null;
+                            }
+                        } catch (err) {
+                            console.log("Feil ved henting av status for barn:", child.id, err);
+                            statusMap[child.id] = "NONE";
+                            timeMap[child.id] = null;
                         }
-                        timeMap[child.id] = storedTime ?? null;
                     }
                     setCheckInStatusMap(statusMap);
                     setLastStatusChangeMap(timeMap);
@@ -149,35 +166,69 @@ export default function HomeScreen() {
                 {/* Primary action: Check in/out for ALL children */}
                 {children.length > 0 ? (
                     children.map((child) => {
-                        const isCheckedIn = checkInStatusMap[child.id] === "INN";
+                        const status = checkInStatusMap[child.id] || "NONE";
+                        const isCheckedIn = status === "CONFIRMED";
+                        const isPending = status === "PENDING";
                         const lastChange = lastStatusChangeMap[child.id];
+
+                        // Determine card style based on status
+                        const cardStyle = isCheckedIn
+                            ? styles.checkinCardIn
+                            : isPending
+                            ? styles.checkinCardPending
+                            : styles.checkinCardOut;
+
+                        // Determine icon and color
+                        const iconName = isCheckedIn
+                            ? "checkmark-circle"
+                            : isPending
+                            ? "time"
+                            : "ellipse-outline";
+                        const iconColor = isCheckedIn
+                            ? "#16A34A"
+                            : isPending
+                            ? "#F59E0B"
+                            : "#DC2626";
+
+                        // Determine text
+                        const statusText = isCheckedIn
+                            ? `${child.firstName} er sjekket inn`
+                            : isPending
+                            ? `${child.firstName} venter på bekreftelse`
+                            : `${child.firstName} er ikke sjekket inn`;
+
+                        const actionText = isCheckedIn
+                            ? "Se status →"
+                            : isPending
+                            ? "Se status →"
+                            : "Sjekk inn →";
 
                         return (
                             <TouchableOpacity
                                 key={child.id}
-                                style={[styles.checkinCard, isCheckedIn ? styles.checkinCardIn : styles.checkinCardOut]}
+                                style={[styles.checkinCard, cardStyle]}
                                 onPress={() => router.push("/checkin")}
                                 activeOpacity={0.85}
                             >
                                 <View style={styles.checkinContent}>
                                     <Ionicons
-                                        name={isCheckedIn ? "checkmark-circle" : "ellipse-outline"}
+                                        name={iconName}
                                         size={40}
-                                        color={isCheckedIn ? "#16A34A" : "#DC2626"}
+                                        color={iconColor}
                                     />
                                     <View style={styles.checkinTextContent}>
                                         <Text style={styles.checkinTitle}>
-                                            {isCheckedIn
-                                                ? `${child.firstName} er sjekket inn`
-                                                : `${child.firstName} er ikke sjekket inn`}
+                                            {statusText}
                                         </Text>
                                         {lastChange && (
-                                            <Text style={styles.checkinSubtext}>Sist oppdatert: {lastChange}</Text>
+                                            <Text style={styles.checkinSubtext}>
+                                                {isCheckedIn ? "Bekreftet" : isPending ? "Levert" : "Sist oppdatert"} kl. {lastChange}
+                                            </Text>
                                         )}
                                     </View>
                                 </View>
                                 <Text style={styles.checkinAction}>
-                                    {isCheckedIn ? "Sjekk ut" : "Sjekk inn"} →
+                                    {actionText}
                                 </Text>
                             </TouchableOpacity>
                         );
@@ -324,6 +375,11 @@ const styles = StyleSheet.create({
         backgroundColor: "#DCFCE7",
         borderWidth: 2,
         borderColor: "#16A34A",
+    },
+    checkinCardPending: {
+        backgroundColor: "#FEF3C7",
+        borderWidth: 2,
+        borderColor: "#F59E0B",
     },
     checkinCardOut: {
         backgroundColor: "#FEE2E2",
