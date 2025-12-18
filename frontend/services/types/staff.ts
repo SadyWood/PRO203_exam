@@ -47,11 +47,13 @@ export interface GroupResponseDto {
 export interface GroupCreateDto {
     name: string;
     kindergartenId: string;
+    maxCapacity?: number;
 }
 
 // Group update DTO
 export interface GroupUpdateDto {
     name?: string;
+    maxCapacity?: number;
 }
 
 // Child response DTO (for staff view)
