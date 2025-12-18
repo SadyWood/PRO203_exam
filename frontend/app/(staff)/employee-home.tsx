@@ -253,12 +253,21 @@ export default function EmployeeHomeScreen() {
             )}
           </View>
 
-          {/* Today's Events */}
-          {todayEvents.length > 0 && (
-            <View style={EmployeeHomeStyles.statusCard}>
-              <Text style={EmployeeHomeStyles.statusTitle}>Dagens hendelser</Text>
+          {/* Today's Events - Always show card, with placeholder if empty */}
+          <View style={EmployeeHomeStyles.statusCard}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <Text style={[EmployeeHomeStyles.statusTitle, { marginBottom: 0 }]}>Dagens hendelser</Text>
+              <Pressable onPress={() => router.push("/(staff)/employee-calendar")}>
+                <Ionicons name="add-circle-outline" size={22} color={Colors.primaryBlue} />
+              </Pressable>
+            </View>
 
-              {todayEvents.map((event) => (
+            {todayEvents.length === 0 ? (
+              <Text style={{ fontSize: 12, color: Colors.textMuted, fontStyle: "italic" }}>
+                Ingen hendelser planlagt for i dag
+              </Text>
+            ) : (
+              todayEvents.map((event) => (
                 <View key={event.id} style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -283,9 +292,9 @@ export default function EmployeeHomeScreen() {
                     )}
                   </View>
                 </View>
-              ))}
-            </View>
-          )}
+              ))
+            )}
+          </View>
         </>
       ) : (
         <View style={EmployeeHomeStyles.statusCard}>
@@ -332,20 +341,31 @@ export default function EmployeeHomeScreen() {
       )}
 
 
-      {/* Staff sees daily events from calendar */}
-      {!isBoss && todayEvents.length > 0 && (
+      {/* Staff sees daily events from calendar - always show with placeholder if empty */}
+      {!isBoss && (
         <View style={EmployeeHomeStyles.agendaCard}>
-          <Text style={EmployeeHomeStyles.agendaTitle}>Dagens hendelser</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={EmployeeHomeStyles.agendaTitle}>Dagens hendelser</Text>
+            <Pressable onPress={() => router.push("/(staff)/employee-calendar")}>
+              <Ionicons name="add-circle-outline" size={20} color={Colors.primaryBlue} />
+            </Pressable>
+          </View>
           <View style={EmployeeHomeStyles.agendaBox}>
             <Text style={EmployeeHomeStyles.agendaDate}>
               {new Date().toLocaleDateString("nb-NO", { day: "2-digit", month: "2-digit", year: "2-digit" })}
             </Text>
-            {todayEvents.map((event) => (
-              <Text key={event.id} style={EmployeeHomeStyles.agendaItem}>
-                • {event.startTime ? `${event.startTime}: ` : ""}{event.title}
-                {event.groupName ? ` (${event.groupName})` : ""}
+            {todayEvents.length === 0 ? (
+              <Text style={[EmployeeHomeStyles.agendaItem, { fontStyle: "italic", color: Colors.textMuted }]}>
+                Ingen hendelser planlagt for i dag
               </Text>
-            ))}
+            ) : (
+              todayEvents.map((event) => (
+                <Text key={event.id} style={EmployeeHomeStyles.agendaItem}>
+                  • {event.startTime ? `${event.startTime}: ` : ""}{event.title}
+                  {event.groupName ? ` (${event.groupName})` : ""}
+                </Text>
+              ))
+            )}
           </View>
         </View>
       )}

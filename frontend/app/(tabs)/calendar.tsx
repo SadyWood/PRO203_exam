@@ -1,24 +1,34 @@
-import React, { useState } from "react";
-import { View, 
+import React, { useState, useCallback } from "react";
+import {
+  View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
   ScrollView,
-  TextInput,
- } from "react-native";
- import { Calendar, toDateId, type CalendarTheme } from "@marceloterreiro/flash-calendar";
- import { styles } from "../../styles/calendar-styles";
- import { Colors } from "@/constants/colors";
+  ActivityIndicator,
+  Platform,
+} from "react-native";
+import { Calendar, toDateId, type CalendarTheme } from "@marceloterreiro/flash-calendar";
+import { useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
- const getMonthDays = (dateId: string) => {
-  //som "2025-12-11"
-  const [yearStr, monthStr] = dateId.split("-"); 
+import { Colors } from "@/constants/colors";
+import { calendarApi, CalendarEventResponseDto } from "@/services/staffApi";
+
+const API_BASE_URL = Platform.OS === "android"
+  ? "http://10.0.2.2:8080"
+  : "http://localhost:8080";
+
+// Helper to get all days in a month
+const getMonthDays = (dateId: string) => {
+  const [yearStr, monthStr] = dateId.split("-");
   const year = Number(yearStr);
   const month = Number(monthStr);
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  const result: { id: string; label: number}[] = [];
+  const result: { id: string; label: number }[] = [];
   for (let day = 1; day <= daysInMonth; day++) {
     const dayStr = String(day).padStart(2, "0");
     result.push({
@@ -27,9 +37,10 @@ import { View,
     });
   }
   return result;
- };
+};
 
- const calendarTheme: CalendarTheme = {
+// Calendar theme
+const calendarTheme: CalendarTheme = {
   itemDay: {
     idle: ({ isPressed }) => ({
       container: {
@@ -57,13 +68,13 @@ import { View,
         fontWeight: "700",
       },
     }),
-    //aktive datoer er fraværsdager 
+    // Active dates show events
     active: ({ isPressed }) => ({
       container: {
         borderRadius: 1,
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.green,
         borderWidth: 3,
-        borderColor: "#a63838ff",
+        borderColor: "#22c55e",
         opacity: isPressed ? 0.3 : 1,
       },
       content: {
@@ -73,235 +84,415 @@ import { View,
       },
     }),
   },
- };
+};
 
- export default function CalendarScreen() {
-  const todayId = toDateId(new Date())
-  //toggle for kalender, enten grid eller liste :p
+export default function CalendarScreen() {
+  const todayId = toDateId(new Date());
+
+  // State
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
-  //dato som er valgt (pressed on)
   const [selectedDate, setSelectedDate] = useState<string>(todayId);
+  const [currentMonth, setCurrentMonth] = useState<string>(todayId);
+  const [events, setEvents] = useState<CalendarEventResponseDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [kindergartenId, setKindergartenId] = useState<string | null>(null);
+  const [childGroupName, setChildGroupName] = useState<string>("");
 
-  //alle fraværsdager
-  const [absentIds, setAbsentIds] = useState<string[]>([]);
+  // Load events when screen comes into focus
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
 
-  //notater for kalender altså turdager, bursdag osv
-  const [events, setEvents] = useState<Record<string, string>>({});
+      // Get user data to find kindergartenId
+      const userStr = await AsyncStorage.getItem("currentUser");
+      if (!userStr) {
+        setLoading(false);
+        return;
+      }
 
-  //modaler
-  const [isConfirmVisible, setIsConfirmVisible] = useState(false);
-  const [isEventVisible, setIsEventVisible] = useState(false);
+      const user = JSON.parse(userStr);
+      if (!user.profileId || user.role !== "PARENT") {
+        setLoading(false);
+        return;
+      }
 
-  const [eventText, setEventText] = useState("");
+      // Fetch children to get kindergartenId and group name
+      const token = await AsyncStorage.getItem("authToken");
+      const childrenRes = await fetch(`${API_BASE_URL}/api/children/parent/${user.profileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-  const isSelectedAbsent = absentIds.includes(selectedDate);
+      if (childrenRes.ok) {
+        const children = await childrenRes.json();
+        if (children.length > 0) {
+          const firstChild = children[0];
+          const kgId = firstChild.kindergartenId;
+          setKindergartenId(kgId);
+          setChildGroupName(firstChild.groupName || "");
 
-  //gjør fraværsdagene om til ranges som kalenderen forstår
-  const activateRange = absentIds.map((id) => ({
-    startId: id,
-    endId: id,
+          if (kgId) {
+            // Calculate date range for the current month
+            const [yearStr, monthStr] = currentMonth.split("-");
+            const year = Number(yearStr);
+            const month = Number(monthStr);
+            const startDate = `${yearStr}-${monthStr}-01`;
+            const lastDay = new Date(year, month, 0).getDate();
+            const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, "0")}`;
+
+            // Use the parent-specific endpoint to get filtered events
+            const monthEvents = await calendarApi.getEventsForParent(kgId, startDate, endDate);
+            setEvents(monthEvents || []);
+          }
+        }
+      }
+    } catch (err) {
+      console.log("Feil ved lasting av kalenderdata:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentMonth]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  // Get events for selected date, sorted by time
+  const selectedDateEvents = events
+    .filter((e) => e.eventDate === selectedDate)
+    .sort((a, b) => {
+      if (!a.startTime) return 1;
+      if (!b.startTime) return -1;
+      return a.startTime.localeCompare(b.startTime);
+    });
+
+  // Get dates that have events (for calendar highlighting)
+  const eventDates = [...new Set(events.map((e) => e.eventDate))];
+  const activeDateRanges = eventDates.map((date) => ({
+    startId: date,
+    endId: date,
   }));
 
-  // alle dagene i måneden (bruker den i listevisning)
-  const monthDays = getMonthDays(todayId)
+  // Navigate months
+  const navigateMonth = (direction: "prev" | "next") => {
+    const [yearStr, monthStr] = currentMonth.split("-");
+    let year = Number(yearStr);
+    let month = Number(monthStr);
 
-  //fravær knapp
-  const handleAbsenceButtonPress = () => {
-    if (isSelectedAbsent) {
-      setAbsentIds((prev) => prev.filter((id) => id !== selectedDate));
-      console.log("fjernet fravær for denne dato:", selectedDate);
-    } else {
-      setIsConfirmVisible(true);
-    }
-  };
-
-  const handleConfirmAbsence = () => {
-    setAbsentIds((prev) => 
-    prev.includes(selectedDate) ? prev : [...prev, selectedDate]
-  );
-  console.log("registrer fravær for denne dato:", selectedDate);
-  setIsConfirmVisible(false);
-
-  //TODO backend her
-  //await api.regostrerAbsence({ childi, date: selectedDate })
-  };
-
-  const openEventModal = () => {
-    setEventText(events[selectedDate] ?? "");
-    setIsEventVisible(true);
-  };
-
-  const handleSaveEvent = () => {
-    setEvents((prev) => {
-      const trimmed = eventText.trim();
-      if (!trimmed) {
-        const { [selectedDate]: _removed, ...rest } = prev;
-        return rest;
+    if (direction === "prev") {
+      month--;
+      if (month < 1) {
+        month = 12;
+        year--;
       }
-      return {...prev, [selectedDate]: trimmed };
-    });
-    setIsEventVisible(false);
+    } else {
+      month++;
+      if (month > 12) {
+        month = 1;
+        year++;
+      }
+    }
 
-    //TODO backend her
-    //await api.savedaynote eller noe ({ date: selectedDate, text: eventText })
+    const newMonth = `${year}-${String(month).padStart(2, "0")}-01`;
+    setCurrentMonth(newMonth);
   };
+
+  const monthDays = getMonthDays(currentMonth);
+  const monthName = new Date(currentMonth).toLocaleDateString("nb-NO", {
+    month: "long",
+    year: "numeric",
+  });
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primaryBlue} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      
+      {/* Header */}
       <View style={styles.headerWrapper}>
-        <Text style={styles.depText}>Avdeling Bjørn</Text>
+        <Text style={styles.depText}>
+          {childGroupName ? `Avdeling ${childGroupName}` : "Kalender"}
+        </Text>
       </View>
 
+      {/* Month navigation */}
+      <View style={styles.monthNav}>
+        <TouchableOpacity onPress={() => navigateMonth("prev")}>
+          <Ionicons name="chevron-back" size={24} color={Colors.primaryBlue} />
+        </TouchableOpacity>
+        <Text style={styles.monthText}>{monthName}</Text>
+        <TouchableOpacity onPress={() => navigateMonth("next")}>
+          <Ionicons name="chevron-forward" size={24} color={Colors.primaryBlue} />
+        </TouchableOpacity>
+      </View>
+
+      {/* View mode toggle */}
       <View style={styles.toggleRow}>
         <TouchableOpacity
-        style={[styles.toggleButton, 
-        viewMode === "grid" && styles.toggleButtonActivate,]}
-        onPress={() => setViewMode("grid")}
-        activeOpacity={0.7}>
-          <Text style={[styles.toggleButtonText, 
-            viewMode === "grid" && styles.toggleButtonTextActivate,]}>
-              Kalender</Text>
-              </TouchableOpacity>
+          style={[styles.toggleButton, viewMode === "grid" && styles.toggleButtonActivate]}
+          onPress={() => setViewMode("grid")}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.toggleButtonText, viewMode === "grid" && styles.toggleButtonTextActivate]}>
+            Kalender
+          </Text>
+        </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.toggleButton, 
-          viewMode === "list" && styles.toggleButtonActivate,]}
+        <TouchableOpacity
+          style={[styles.toggleButton, viewMode === "list" && styles.toggleButtonActivate]}
           onPress={() => setViewMode("list")}
-          activeOpacity={0.7}>
-            <Text style={[styles.toggleButtonText,
-              viewMode === "list" && styles.toggleButtonTextActivate,]}>
-                Liste</Text>
-          </TouchableOpacity>
-          
-          </View>
-          {viewMode === "grid" && events[selectedDate] && (
-                  <View style={styles.eventPreview}>
-                    <Text style={styles.eventPreviewTitle}>Notat for valgt dag</Text>
-                    <Text style={styles.eventPreviewBody}>{events[selectedDate]}</Text>
-                  </View>
-                )}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.toggleButtonText, viewMode === "list" && styles.toggleButtonTextActivate]}>
+            Liste
+          </Text>
+        </TouchableOpacity>
+      </View>
 
+      {/* Selected date events preview (grid view only) */}
+      {viewMode === "grid" && (
+        <View style={styles.eventPreview}>
+          <Text style={styles.eventPreviewTitle}>
+            {new Date(selectedDate).toLocaleDateString("nb-NO", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}
+          </Text>
+          {selectedDateEvents.length === 0 ? (
+            <Text style={styles.noEventsText}>Ingen hendelser denne dagen</Text>
+          ) : (
+            selectedDateEvents.map((event) => (
+              <View key={event.id} style={styles.eventItem}>
+                <View style={styles.eventItemRow}>
+                  {event.isSpecialOccasion && (
+                    <Ionicons name="star" size={14} color={Colors.yellow} style={{ marginRight: 4 }} />
+                  )}
+                  <Text style={styles.eventItemTitle}>{event.title}</Text>
+                </View>
+                {(event.startTime || event.groupName) && (
+                  <Text style={styles.eventItemTime}>
+                    {event.startTime || ""}{event.startTime && event.endTime ? ` - ${event.endTime}` : ""}
+                    {event.groupName ? ` | ${event.groupName}` : " | Alle"}
+                  </Text>
+                )}
+                {event.description && (
+                  <Text style={styles.eventItemDesc} numberOfLines={2}>{event.description}</Text>
+                )}
+              </View>
+            ))
+          )}
+        </View>
+      )}
+
+      {/* Calendar/List view */}
       {viewMode === "grid" ? (
         <Calendar
-        calendarMonthId={todayId}
-        calendarActiveDateRanges={activateRange}
-        onCalendarDayPress={(dateId) => {
-          setSelectedDate(dateId);
-        }}
-        calendarFirstDayOfWeek="monday"
-        calendarDayHeight={40}
-        calendarRowHorizontalSpacing={4}
-        calendarRowVerticalSpacing={4}
-        theme={calendarTheme}
+          calendarMonthId={currentMonth}
+          calendarActiveDateRanges={activeDateRanges}
+          onCalendarDayPress={(dateId) => setSelectedDate(dateId)}
+          calendarFirstDayOfWeek="monday"
+          calendarDayHeight={40}
+          calendarRowHorizontalSpacing={4}
+          calendarRowVerticalSpacing={4}
+          theme={calendarTheme}
         />
       ) : (
         <ScrollView style={styles.listWrapper}>
           {monthDays.map((day) => {
             const dateId = day.id;
-            const isAbsent = absentIds.includes(dateId);
-            const hasEvent = Boolean(events[dateId]);
+            const dayEvents = events.filter((e) => e.eventDate === dateId);
+            const hasEvents = dayEvents.length > 0;
+            const hasSpecial = dayEvents.some((e) => e.isSpecialOccasion);
 
             return (
               <TouchableOpacity
-              key={dateId}
-              style={[styles.listRow, isAbsent && styles.listRowAbsent,
-                dateId === selectedDate && styles.listRowSelected,
-              ]}
-              onPress={() => setSelectedDate(dateId)}
-              activeOpacity={0.7}>
+                key={dateId}
+                style={[
+                  styles.listRow,
+                  hasEvents && styles.listRowWithEvents,
+                  hasSpecial && styles.listRowSpecial,
+                  dateId === selectedDate && styles.listRowSelected,
+                ]}
+                onPress={() => setSelectedDate(dateId)}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.listDayNumber}>{day.label}</Text>
                 <View style={styles.listContent}>
-                  {hasEvent && (
-                    <Text style={styles.listEventText}
-                    numberOfLines={2}>{events[dateId]}</Text>
-                  )}
-                  {isAbsent && (
-                    <Text style={styles.listAbsenceLabel}>Fravær</Text>
-                  )}
+                  {dayEvents.map((event) => (
+                    <View key={event.id} style={styles.listEventRow}>
+                      {event.isSpecialOccasion && (
+                        <Ionicons name="star" size={12} color={Colors.yellow} />
+                      )}
+                      <Text style={styles.listEventText} numberOfLines={1}>
+                        {event.startTime ? `${event.startTime} - ` : ""}
+                        {event.title}
+                        {event.groupName ? ` (${event.groupName})` : ""}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
       )}
-
-      <TouchableOpacity
-      style={styles.absenceButton}
-      onPress={handleAbsenceButtonPress}
-      activeOpacity={0.6}
-      >
-        <Text style={styles.absenceButtonText}>{isSelectedAbsent ? "Fjern fravær" : "Registrer fravær her"}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.secondaryButton}
-      onPress={openEventModal}
-      activeOpacity={0.6}>
-        <Text style={styles.secondaryButtonText}>{events[selectedDate] ? "Rediger Tekst" : "Legg til tekst"}</Text>
-      </TouchableOpacity>
-
-      
-      <Modal 
-      visible={isConfirmVisible}
-      transparent 
-      animationType="fade"
-      onRequestClose={() => setIsConfirmVisible(false)}
-      >
-      <View style={styles.modalBackdrop}>
-      <View style={styles.modalCard}>
-        <Text style={styles.modalTitle}>Register fravær</Text>
-        <Text style={styles.modalBody}>
-          Du er nå i ferd med å registrere fravær. trykk på godkjenn ikonet nedenfor hvis 
-          du har valgt riktig dag eller klikk på kryss ikonet dersom du ikke er sikker enda.
-        </Text>
-        <View style={styles.modalButtonsRow}>
-
-          <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]}
-          onPress={handleConfirmAbsence}
-          activeOpacity={0.7}>
-            <Text style={styles.modalButtonIcon}>✅</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]}
-          onPress={() => setIsConfirmVisible(false)}
-          activeOpacity={0.7}>
-            <Text style={styles.modalButtonIcon}>❌</Text>
-          </TouchableOpacity>
-        </View>
-        </View>
-      </View>
-      </Modal>
-
-      <Modal 
-      visible={isEventVisible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => setIsEventVisible(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Notat for valgt dag</Text>
-            <TextInput style={styles.eventInput}
-              placeholder="skriv inn bursdager, turdager m.m her!"
-              placeholderTextColor={Colors.textMuted}
-              multiline value={eventText}
-              onChangeText={setEventText}/>
-              <View style={styles.modalButtonsRow}>
-                <TouchableOpacity style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={handleSaveEvent}
-                activeOpacity={0.7}
-                >
-                  <Text style={styles.modalButtonIcon}>✅</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => setIsEventVisible(false)}
-                activeOpacity={0.7}>
-                  <Text style={styles.modalButtonIcon}>❌</Text>
-                </TouchableOpacity>
-              </View>
-          </View>
-        </View>
-      </Modal>
-      </View>
+    </View>
   );
- };
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 26,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
+  },
+  headerWrapper: {
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  depText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.text,
+  },
+  monthNav: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    gap: 16,
+  },
+  monthText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+    textTransform: "capitalize",
+    minWidth: 150,
+    textAlign: "center",
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignSelf: "center",
+    backgroundColor: Colors.primaryLightBlue,
+    borderRadius: 99,
+    padding: 4,
+    marginBottom: 12,
+  },
+  toggleButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 99,
+  },
+  toggleButtonActivate: {
+    backgroundColor: Colors.primaryBlue,
+  },
+  toggleButtonText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: Colors.textMuted,
+  },
+  toggleButtonTextActivate: {
+    color: Colors.text,
+    fontWeight: "700",
+  },
+  eventPreview: {
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: Colors.primaryLightBlue,
+  },
+  eventPreviewTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.text,
+    marginBottom: 6,
+    textTransform: "capitalize",
+  },
+  noEventsText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    fontStyle: "italic",
+  },
+  eventItem: {
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.primaryBlue,
+  },
+  eventItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  eventItemTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+  eventItemTime: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  eventItemDesc: {
+    fontSize: 11,
+    color: Colors.text,
+    marginTop: 2,
+  },
+  listWrapper: {
+    flex: 1,
+    marginTop: 4,
+  },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.primaryLightBlue,
+    backgroundColor: Colors.primaryBlue,
+  },
+  listRowWithEvents: {
+    backgroundColor: Colors.green,
+  },
+  listRowSpecial: {
+    backgroundColor: Colors.yellow,
+  },
+  listRowSelected: {
+    borderWidth: 1,
+    borderColor: Colors.text,
+  },
+  listDayNumber: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.text,
+    width: 30,
+  },
+  listContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  listEventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  listEventText: {
+    fontSize: 12,
+    color: Colors.text,
+  },
+});

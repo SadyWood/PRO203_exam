@@ -117,7 +117,33 @@ export interface CalendarEventResponseDto {
     startTime?: string;
     endTime?: string;
     location?: string;
+    isSpecialOccasion?: boolean;  // Flag for trips, special days, etc.
     createdBy?: string;
     createdByName?: string;
     createdAt?: string;
+}
+
+// Calendar event create DTO
+export interface CreateCalendarEventDto {
+    kindergartenId: string;
+    groupId?: string;  // NULL = kindergarten-wide event
+    title: string;
+    description?: string;
+    eventDate: string;  // ISO date string (YYYY-MM-DD)
+    startTime?: string; // HH:mm format
+    endTime?: string;   // HH:mm format
+    location?: string;
+    isSpecialOccasion?: boolean;
+}
+
+// Calendar event update DTO
+export interface UpdateCalendarEventDto {
+    groupId?: string;
+    title?: string;
+    description?: string;
+    eventDate?: string;
+    startTime?: string;
+    endTime?: string;
+    location?: string;
+    isSpecialOccasion?: boolean;
 }

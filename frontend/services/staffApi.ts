@@ -11,6 +11,8 @@ import {
     ParentResponseDto,
     ParentChildDto,
     CalendarEventResponseDto,
+    CreateCalendarEventDto,
+    UpdateCalendarEventDto,
 } from "./types/staff";
 
 // Re-export types for convenience
@@ -26,6 +28,8 @@ export type {
     ParentResponseDto,
     ParentChildDto,
     CalendarEventResponseDto,
+    CreateCalendarEventDto,
+    UpdateCalendarEventDto,
 };
 
 // Staff API endpoints
@@ -151,5 +155,27 @@ export const calendarApi = {
     getEventsByDateRange: (kindergartenId: string, start: string, end: string) =>
         apiGet<CalendarEventResponseDto[]>(
             `/api/calendar/kindergarten/${kindergartenId}/range?start=${start}&end=${end}`
+        ),
+
+    // Get a single event by ID
+    getEventById: (eventId: string) =>
+        apiGet<CalendarEventResponseDto>(`/api/calendar/${eventId}`),
+
+    // Create a new calendar event
+    createEvent: (data: CreateCalendarEventDto) =>
+        apiPost<CalendarEventResponseDto>("/api/calendar", data),
+
+    // Update an existing calendar event
+    updateEvent: (eventId: string, data: UpdateCalendarEventDto) =>
+        apiPut<CalendarEventResponseDto>(`/api/calendar/${eventId}`, data),
+
+    // Delete a calendar event
+    deleteEvent: (eventId: string) =>
+        apiDelete<void>(`/api/calendar/${eventId}`),
+
+    // Get events for a parent (filtered by their children's groups)
+    getEventsForParent: (kindergartenId: string, start: string, end: string) =>
+        apiGet<CalendarEventResponseDto[]>(
+            `/api/calendar/parent/${kindergartenId}/range?start=${start}&end=${end}`
         ),
 };
