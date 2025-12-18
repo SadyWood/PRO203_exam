@@ -6,7 +6,6 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  StyleSheet,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,9 +13,11 @@ import { useEffect, useState } from "react";
 import { Colors } from "@/constants/colors";
 import { getCurrentUser } from "@/services/authApi";
 import { kindergartenApi, staffApi } from "@/services/staffApi";
+import { AdminStyles } from "@/styles";
 import type { KindergartenResponseDto, StaffResponseDto } from "@/services/types/staff";
 import type { UserResponseDto } from "@/services/types/auth";
 
+//  Kindergarten Settings Screen - update kindergarten information
 export default function KindergartenSettingsScreen() {
   const router = useRouter();
   const [user, setUser] = useState<UserResponseDto | null>(null);
@@ -38,7 +39,7 @@ export default function KindergartenSettingsScreen() {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
 
-        // Check if user is BOSS
+        // Only BOSS can access this screen
         if (currentUser?.role !== "BOSS") {
           Alert.alert("Ingen tilgang", "Du har ikke tilgang til denne siden.");
           router.back();
@@ -52,7 +53,7 @@ export default function KindergartenSettingsScreen() {
           if (staff.kindergartenId) {
             const kg = await kindergartenApi.getKindergarten(staff.kindergartenId);
             setKindergarten(kg);
-            // Pre-fill form
+            // Pre-fill form with current values
             setName(kg.name || "");
             setAddress(kg.address || "");
             setPhoneNumber(kg.phoneNumber || "");
@@ -69,6 +70,7 @@ export default function KindergartenSettingsScreen() {
     loadData();
   }, []);
 
+// Save updated kindergarten information
   async function handleSave() {
     if (!kindergarten?.id) return;
 
@@ -97,46 +99,46 @@ export default function KindergartenSettingsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <View style={[AdminStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color={Colors.primaryBlue} />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={AdminStyles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <View style={AdminStyles.header}>
+        <Pressable onPress={() => router.replace("/(staff)/admin/administration")} style={AdminStyles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </Pressable>
-        <Text style={styles.title}>Barnehageinnstillinger</Text>
-        <View style={{ width: 24 }} />
+        <Text style={AdminStyles.title}>Barnehageinnstillinger</Text>
+        <View style={AdminStyles.headerSpacer} />
       </View>
 
-      {/* Form */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Barnehagennavn *</Text>
+      {/* Form Card */}
+      <View style={AdminStyles.formCard}>
+        <Text style={AdminStyles.formLabel}>Barnehagennavn *</Text>
         <TextInput
-          style={styles.input}
+          style={AdminStyles.formInput}
           value={name}
           onChangeText={setName}
           placeholder="Skriv inn barnehagennavn"
           placeholderTextColor={Colors.textMuted}
         />
 
-        <Text style={styles.label}>Adresse</Text>
+        <Text style={AdminStyles.formLabel}>Adresse</Text>
         <TextInput
-          style={styles.input}
+          style={AdminStyles.formInput}
           value={address}
           onChangeText={setAddress}
           placeholder="Skriv inn adresse"
           placeholderTextColor={Colors.textMuted}
         />
 
-        <Text style={styles.label}>Telefon</Text>
+        <Text style={AdminStyles.formLabel}>Telefon</Text>
         <TextInput
-          style={styles.input}
+          style={AdminStyles.formInput}
           value={phoneNumber}
           onChangeText={setPhoneNumber}
           placeholder="Skriv inn telefonnummer"
@@ -144,9 +146,9 @@ export default function KindergartenSettingsScreen() {
           keyboardType="phone-pad"
         />
 
-        <Text style={styles.label}>E-post</Text>
+        <Text style={AdminStyles.formLabel}>E-post</Text>
         <TextInput
-          style={styles.input}
+          style={AdminStyles.formInput}
           value={email}
           onChangeText={setEmail}
           placeholder="Skriv inn e-post"
@@ -158,78 +160,16 @@ export default function KindergartenSettingsScreen() {
 
       {/* Save Button */}
       <Pressable
-        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+        style={[AdminStyles.saveButton, saving && AdminStyles.saveButtonDisabled, { marginBottom: 20 }]}
         onPress={handleSave}
         disabled={saving}
       >
         {saving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.saveButtonText}>Lagre endringer</Text>
+          <Text style={AdminStyles.saveButtonText}>Lagre endringer</Text>
         )}
       </Pressable>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    padding: 20,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.primaryLightBlue,
-    padding: 16,
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: Colors.background,
-    color: Colors.text,
-  },
-  saveButton: {
-    backgroundColor: Colors.primaryBlue,
-    borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  saveButtonDisabled: {
-    opacity: 0.7,
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-});
