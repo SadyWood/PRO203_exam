@@ -3,7 +3,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
-import { EmployeeHomeStyles } from "@/styles";
+import { EmployeeHomeStyles, AdminStyles } from "@/styles";
 import { Colors } from "@/constants/colors";
 import { getCurrentUser } from "@/services/authApi";
 import { UserResponseDto } from "@/services/types/auth";
@@ -147,6 +147,17 @@ export default function EmployeeHomeScreen() {
           </View>
         )}
       </View>
+
+      {/* Boss-only: Quick access to administration menu */}
+      {isBoss && (
+        <Pressable
+          style={AdminStyles.adminButton}
+          onPress={() => router.push("/(staff)/admin/administration")}
+        >
+          <Ionicons name="settings-outline" size={20} color="#fff" />
+          <Text style={AdminStyles.adminButtonText}>Administrer</Text>
+        </Pressable>
+      )}
 
       <View style={EmployeeHomeStyles.quickActionsRow}>
         {!isBoss && (
@@ -320,36 +331,6 @@ export default function EmployeeHomeScreen() {
         </View>
       )}
 
-      {/* Boss Admin Section */}
-      {isBoss && (
-        <View style={EmployeeHomeStyles.statusCard}>
-          <Text style={EmployeeHomeStyles.statusTitle}>Admin-funksjoner</Text>
-
-          <Pressable
-            style={[EmployeeHomeStyles.primaryBtn, { marginBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }]}
-            onPress={() => router.push("/(staff)/admin/kindergarten-settings")}
-          >
-            <Ionicons name="settings-outline" size={18} color={Colors.text} />
-            <Text style={EmployeeHomeStyles.primaryBtnText}>Barnehageinnstillinger</Text>
-          </Pressable>
-
-          <Pressable
-            style={[EmployeeHomeStyles.primaryBtn, { marginBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }]}
-            onPress={() => router.push("/(staff)/admin/manage-groups")}
-          >
-            <Ionicons name="people-outline" size={18} color={Colors.text} />
-            <Text style={EmployeeHomeStyles.primaryBtnText}>Administrer grupper</Text>
-          </Pressable>
-
-          <Pressable
-            style={[EmployeeHomeStyles.primaryBtn, { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }]}
-            onPress={() => router.push("/(staff)/admin/manage-staff")}
-          >
-            <Ionicons name="person-outline" size={18} color={Colors.text} />
-            <Text style={EmployeeHomeStyles.primaryBtnText}>Administrer ansatte</Text>
-          </Pressable>
-        </View>
-      )}
 
       {/* Staff sees daily events from calendar */}
       {!isBoss && todayEvents.length > 0 && (
