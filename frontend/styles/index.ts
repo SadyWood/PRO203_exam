@@ -11,6 +11,7 @@ export { ParentMessagesStyles } from "./parentMessagesStyles";
 export { ParentCheckinStyles } from "./parentCheckinStyles";
 export { PostsStyles } from "./postsStyles";
 export { EmployeeChildrenStyles } from "./employeeChildrenStyles";
+export { AdminStyles } from "./adminStyles";
 
 
 
