@@ -85,6 +85,12 @@ export default function StaffTabsLayout() {
 
       {/* Admin screens - hidden from tab bar */}
       <Tabs.Screen
+        name="admin/administration"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="admin/kindergarten-settings"
         options={{
           href: null,
