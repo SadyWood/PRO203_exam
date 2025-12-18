@@ -55,6 +55,6 @@ jwt:
 # Google OAuth Configuration
 google:
   client-ids:
-    - "231817845094-uosrqoegm0dtt60n18iso1u533h2noau.apps.googleusercontent.com"
+    - "231817845094-pv3iaitm8s5okdj13q9jal94ijslkbbu.apps.googleusercontent.com"
     - "231817845094-tm3a42ql593rlkch0af5iq9m1j8pd1aq.apps.googleusercontent.com"
     - "231817845094-em6lk0v2d6ndnrfdcsngv8rf5k8poiju.apps.googleusercontent.com"

@@ -121,19 +121,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     alignItems: "center",
-    paddingTop: 150,
+    paddingTop: 80,
   },
 
   logoBox: {
-    width: "85%",
+    width: "65%",
     paddingVertical: 24,
     borderRadius: 16,
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 20,
   },
 
   logoImage: {
-    width: '60%',
+    width: '50%',
     height: undefined,
     aspectRatio: 1,
   },
