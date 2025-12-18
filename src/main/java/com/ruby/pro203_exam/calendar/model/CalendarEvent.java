@@ -45,6 +45,11 @@ public class CalendarEvent {
     @Column(name = "location", length = 300)
     private String location;
 
+    // Flag for special occasions like trips, birthdays, etc.
+    @Column(name = "is_special_occasion", nullable = false)
+    @Builder.Default
+    private Boolean isSpecialOccasion = false;
+
     @Column(name = "created_by", nullable = false)
     private UUID createdBy;
 

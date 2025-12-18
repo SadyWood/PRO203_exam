@@ -23,4 +23,5 @@ public class CreateCalendarEventDto {
     private LocalTime startTime;
     private LocalTime endTime;
     private String location;
+    private Boolean isSpecialOccasion;  // Flag for trips, special days, etc.
 }

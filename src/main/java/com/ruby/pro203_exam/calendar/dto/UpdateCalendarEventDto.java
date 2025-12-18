@@ -7,27 +7,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 
+// DTO for updating calendar events - All fields are optional - only non-null fields will be updated.
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CalendarEventResponseDto {
-    private UUID id;
-    private UUID kindergartenId;
-    private UUID groupId;
-    private String groupName;
+public class UpdateCalendarEventDto {
+    private UUID groupId;  // NULL = kindergarten-wide event
     private String title;
     private String description;
     private LocalDate eventDate;
     private LocalTime startTime;
     private LocalTime endTime;
     private String location;
-    private Boolean isSpecialOccasion;  // Flag for trips, special days, etc.
-    private UUID createdBy;
-    private String createdByName;
-    private LocalDateTime createdAt;
+    private Boolean isSpecialOccasion;
 }

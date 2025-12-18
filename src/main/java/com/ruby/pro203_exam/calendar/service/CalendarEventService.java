@@ -2,6 +2,7 @@ package com.ruby.pro203_exam.calendar.service;
 
 import com.ruby.pro203_exam.calendar.dto.CalendarEventResponseDto;
 import com.ruby.pro203_exam.calendar.dto.CreateCalendarEventDto;
+import com.ruby.pro203_exam.calendar.dto.UpdateCalendarEventDto;
 import com.ruby.pro203_exam.calendar.model.CalendarEvent;
 import com.ruby.pro203_exam.calendar.repository.CalendarEventRepository;
 import com.ruby.pro203_exam.group.repository.GroupRepository;
@@ -39,6 +40,7 @@ public class CalendarEventService {
                 .startTime(dto.getStartTime())
                 .endTime(dto.getEndTime())
                 .location(dto.getLocation())
+                .isSpecialOccasion(dto.getIsSpecialOccasion() != null ? dto.getIsSpecialOccasion() : false)
                 .createdBy(createdBy)
                 .build();
 
@@ -87,6 +89,50 @@ public class CalendarEventService {
         return result;
     }
 
+// Update an existing calendar event. Only non-null fields in the DTO will be updated.
+    public CalendarEventResponseDto updateEvent(UUID eventId, UpdateCalendarEventDto dto) {
+        log.info("Updating calendar event {}", eventId);
+
+        CalendarEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Calendar event not found"));
+
+        // Update only non-null fields
+        if (dto.getGroupId() != null) {
+            event.setGroupId(dto.getGroupId());
+        }
+        if (dto.getTitle() != null) {
+            event.setTitle(dto.getTitle());
+        }
+        if (dto.getDescription() != null) {
+            event.setDescription(dto.getDescription());
+        }
+        if (dto.getEventDate() != null) {
+            event.setEventDate(dto.getEventDate());
+        }
+        if (dto.getStartTime() != null) {
+            event.setStartTime(dto.getStartTime());
+        }
+        if (dto.getEndTime() != null) {
+            event.setEndTime(dto.getEndTime());
+        }
+        if (dto.getLocation() != null) {
+            event.setLocation(dto.getLocation());
+        }
+        if (dto.getIsSpecialOccasion() != null) {
+            event.setIsSpecialOccasion(dto.getIsSpecialOccasion());
+        }
+
+        CalendarEvent saved = eventRepository.save(event);
+        return toResponseDto(saved);
+    }
+
+// Get a single calendar event by ID.
+    public CalendarEventResponseDto getEventById(UUID eventId) {
+        CalendarEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Calendar event not found"));
+        return toResponseDto(event);
+    }
+
     public void deleteEvent(UUID eventId) {
         log.info("Deleting calendar event {}", eventId);
         eventRepository.deleteById(eventId);
@@ -116,6 +162,7 @@ public class CalendarEventService {
                 .startTime(event.getStartTime())
                 .endTime(event.getEndTime())
                 .location(event.getLocation())
+                .isSpecialOccasion(event.getIsSpecialOccasion())
                 .createdBy(event.getCreatedBy())
                 .createdByName(createdByName)
                 .createdAt(event.getCreatedAt())
