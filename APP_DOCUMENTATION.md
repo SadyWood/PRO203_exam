@@ -440,8 +440,11 @@ frontend/
 ### Base URL Configuration
 ```typescript
 // Platform-aware base URL
-Android Emulator: http://10.0.2.2:8080
-iOS/Web:          http://localhost:8080
+Android-Emulator
+    http://10.0.2.2:8080
+    
+iOS/Web          
+    http://localhost:8080
 ```
 
 
