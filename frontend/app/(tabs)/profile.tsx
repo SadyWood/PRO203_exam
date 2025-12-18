@@ -8,13 +8,13 @@ import {
     Platform,
     Pressable,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout } from "@/services/authApi";
 import { Child } from "@/models/child";
-import { ParentProfileStyles } from "@/styles";
+import { ParentProfileStyles as styles } from "@/styles";
 import { Colors } from "@/constants/colors";
 
 const API_BASE_URL = Platform.OS === "android"
@@ -28,27 +28,30 @@ export default function ProfileScreen() {
     const [children, setChildren] = useState<Child[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function fetchProfile() {
-            try {
-                const userStr = await AsyncStorage.getItem("currentUser");
-                if (userStr) {
-                    const user = JSON.parse(userStr);
+    const fetchProfile = useCallback(async () => {
+        try {
+            setLoading(true);
+            const userStr = await AsyncStorage.getItem("currentUser");
+            if (userStr) {
+                const user = JSON.parse(userStr);
 
-                    if (user.profileId && user.role === "PARENT") {
-                        await fetchParentProfile(user.profileId);
-                        await fetchChildren(user.profileId);
-                    }
+                if (user.profileId && user.role === "PARENT") {
+                    await fetchParentProfile(user.profileId);
+                    await fetchChildren(user.profileId);
                 }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
             }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
-
-        fetchProfile();
     }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchProfile();
+        }, [fetchProfile])
+    );
 
     async function fetchParentProfile(parentId: string) {
         try {
@@ -62,7 +65,6 @@ export default function ProfileScreen() {
             if (res.ok) {
                 const data = await res.json();
                 setParentData(data);
-                console.log("Parent data:", data);
             }
         } catch (error) {
             console.error(error);
@@ -98,20 +100,20 @@ export default function ProfileScreen() {
     }
 
     return (
-        <ScrollView style={ParentProfileStyles.container}>
+        <ScrollView style={styles.container}>
             {/* Profile Card */}
             {loading ? (
-                <View style={ParentProfileStyles.profileCard}>
+                <View style={styles.profileCard}>
                     <ActivityIndicator size="small" color={Colors.primaryBlue} />
                 </View>
             ) : (
-                <View style={ParentProfileStyles.profileCard}>
+                <View style={styles.profileCard}>
                     <Image
-                        source={{ uri: "https://randomuser.me/api/portraits/boy/32.jpg" }}
-                        style={ParentProfileStyles.avatar}
+                        source={{ uri: "https://randomuser.me/api/portraits/lego/1.jpg" }}
+                        style={styles.avatar}
                     />
-                    <View style={{ flex: 1 }}>
-                        <Text style={ParentProfileStyles.name}>
+                    <View style={styles.nameContainer}>
+                        <Text style={styles.name}>
                             {parentData?.firstName} {parentData?.lastName}
                         </Text>
                     </View>
@@ -119,55 +121,55 @@ export default function ProfileScreen() {
             )}
 
             {/* Contact Information */}
-            <View style={ParentProfileStyles.section}>
-                <Text style={ParentProfileStyles.sectionTitle}>
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
                     Kontaktinformasjon
                 </Text>
 
-                <View style={ParentProfileStyles.infoBox}>
-                    <View style={ParentProfileStyles.infoRow}>
+                <View style={styles.infoBox}>
+                    <View style={styles.infoRow}>
                         <Ionicons
                             name="mail-outline"
                             size={18}
-                            style={ParentProfileStyles.infoIcon}
+                            style={styles.infoIcon}
                         />
-                        <Text style={ParentProfileStyles.infoText}>
+                        <Text style={styles.infoText}>
                             {parentData?.email || "Ingen e-post"}
                         </Text>
                     </View>
 
-                    <View style={ParentProfileStyles.infoRow}>
+                    <View style={styles.infoRow}>
                         <Ionicons
                             name="call-outline"
                             size={18}
-                            style={ParentProfileStyles.infoIcon}
+                            style={styles.infoIcon}
                         />
-                        <Text style={ParentProfileStyles.infoText}>
+                        <Text style={styles.infoText}>
                             {parentData?.phoneNumber || "Ingen telefon"}
                         </Text>
                     </View>
 
-                    <View style={ParentProfileStyles.infoRow}>
+                    <View style={styles.infoRow}>
                         <Ionicons
                             name="home-outline"
                             size={18}
-                            style={ParentProfileStyles.infoIcon}
+                            style={styles.infoIcon}
                         />
-                        <Text style={ParentProfileStyles.infoText}>
+                        <Text style={styles.infoText}>
                             {parentData?.address || "Ingen adresse"}
                         </Text>
                     </View>
                 </View>
 
-                <View style={{ marginTop: 10 }}>
+                <View style={styles.buttonMarginTop}>
                     <Pressable
                         style={[
-                            ParentProfileStyles.primaryBtn,
-                            ParentProfileStyles.primaryBtnNeutral,
+                            styles.primaryBtn,
+                            styles.primaryBtnNeutral,
                         ]}
                         onPress={() => router.push("/edit-profile")}
                     >
-                        <Text style={ParentProfileStyles.primaryBtnText}>
+                        <Text style={styles.primaryBtnText}>
                             Rediger info
                         </Text>
                     </Pressable>
@@ -175,8 +177,8 @@ export default function ProfileScreen() {
             </View>
 
             {/* Children */}
-            <View style={ParentProfileStyles.section}>
-                <Text style={ParentProfileStyles.sectionTitle}>Barn</Text>
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Barn</Text>
 
                 {loading ? (
                     <ActivityIndicator size="small" color={Colors.primaryBlue} />
@@ -184,61 +186,66 @@ export default function ProfileScreen() {
                     children.map((child) => (
                         <TouchableOpacity
                             key={child.id}
-                            style={ParentProfileStyles.childItem}
+                            style={styles.childItem}
                             onPress={() => router.push(`/child/${child.id}`)}
                         >
-                            <Text style={ParentProfileStyles.childName}>
+                            <Text style={styles.childName}>
                                 {child.firstName} {child.lastName}
                             </Text>
-                            <Ionicons name="arrow-forward" size={20} />
+                            <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
                         </TouchableOpacity>
                     ))
                 ) : (
-                    <Text style={ParentProfileStyles.infoText}>
+                    <Text style={styles.emptyText}>
                         Ingen barn registrert
                     </Text>
                 )}
+
+                <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => router.push("/add-child")}
+                >
+                    <Ionicons name="add-circle-outline" size={20} color={Colors.text} />
+                    <Text style={styles.addButtonText}>Legg til barn</Text>
+                </TouchableOpacity>
             </View>
 
             {/* Co-parent */}
-            <View style={ParentProfileStyles.section}>
-                <Text style={ParentProfileStyles.sectionTitle}>Medforelder</Text>
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Medforelder</Text>
 
                 {parentData?.coParents && parentData.coParents.length > 0 ? (
                     parentData.coParents.map((coParent: any) => (
                         <TouchableOpacity
                             key={coParent.id}
-                            style={ParentProfileStyles.childItem}
+                            style={styles.childItem}
                         >
-                            <Text style={ParentProfileStyles.childName}>
+                            <Text style={styles.childName}>
                                 {coParent.firstName} {coParent.lastName}
                             </Text>
-                            <Ionicons name="arrow-forward" size={20} />
+                            <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
                         </TouchableOpacity>
                     ))
                 ) : (
-                    <TouchableOpacity style={ParentProfileStyles.childItem}>
-                        <Text style={ParentProfileStyles.childName}>
-                            Kari Mette Hansen
-                        </Text>
-                        <Ionicons name="arrow-forward" size={20} />
-                    </TouchableOpacity>
+                    <Text style={styles.emptyText}>
+                        Ingen medforelder registrert
+                    </Text>
                 )}
             </View>
 
             {/* Logout */}
-            <View style={ParentProfileStyles.section}>
+            <View style={styles.section}>
                 <Pressable
                     style={[
-                        ParentProfileStyles.primaryBtn,
-                        ParentProfileStyles.primaryBtnDanger,
+                        styles.primaryBtn,
+                        styles.primaryBtnDanger,
                     ]}
                     onPress={handleLogout}
                 >
                     <Text
                         style={[
-                            ParentProfileStyles.primaryBtnText,
-                            ParentProfileStyles.primaryBtnTextDanger,
+                            styles.primaryBtnText,
+                            styles.primaryBtnTextDanger,
                         ]}
                     >
                         Logg ut

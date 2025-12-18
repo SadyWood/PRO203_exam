@@ -1,0 +1,231 @@
+import { StyleSheet } from "react-native";
+import { Colors } from "@/constants/colors";
+
+export const AddChildStyles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: Colors.background,
+    },
+    loadingContainer: {
+        flex: 1,
+        backgroundColor: Colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    content: {
+        padding: 16,
+        paddingTop: 20,
+        paddingBottom: 40,
+    },
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 20,
+    },
+    backButton: {
+        padding: 4,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: Colors.text,
+    },
+    placeholder: {
+        width: 28,
+    },
+    card: {
+        backgroundColor: "white",
+        padding: 20,
+        borderRadius: 12,
+        gap: 12,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: Colors.text,
+        marginTop: 8,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: Colors.text,
+        marginTop: 8,
+    },
+    helpText: {
+        fontSize: 12,
+        color: Colors.textMuted,
+        marginBottom: 8,
+    },
+    input: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        borderColor: Colors.primaryLightBlue,
+        color: Colors.text,
+        backgroundColor: "#fff",
+    },
+    textArea: {
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 14,
+        borderColor: Colors.primaryLightBlue,
+        color: Colors.text,
+        backgroundColor: "#fff",
+        minHeight: 80,
+        textAlignVertical: "top",
+    },
+    dateInputRow: {
+        flexDirection: "row",
+        gap: 8,
+        alignItems: "center",
+    },
+    dateInputSmall: {
+        flex: 1,
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        borderColor: Colors.primaryLightBlue,
+        color: Colors.text,
+        backgroundColor: "#fff",
+        textAlign: "center",
+    },
+    dateInputLarge: {
+        flex: 1.5,
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 16,
+        borderColor: Colors.primaryLightBlue,
+        color: Colors.text,
+        backgroundColor: "#fff",
+        textAlign: "center",
+    },
+    dateSeparator: {
+        fontSize: 18,
+        color: Colors.textMuted,
+        fontWeight: "600",
+    },
+    dateInputLabel: {
+        fontSize: 10,
+        color: Colors.textMuted,
+        textAlign: "center",
+        marginTop: 2,
+    },
+    dateInputWrapper: {
+        flex: 1,
+        alignItems: "center",
+    },
+    dateInputWrapperLarge: {
+        flex: 1.5,
+        alignItems: "center",
+    },
+    optionToggleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 12,
+        paddingHorizontal: 4,
+    },
+    optionToggleText: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: Colors.text,
+        flex: 1,
+    },
+    optionToggleButtons: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    optionToggleButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        backgroundColor: Colors.primaryLightBlue,
+    },
+    optionToggleButtonActive: {
+        backgroundColor: Colors.green,
+    },
+    optionToggleButtonText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: Colors.text,
+    },
+    optionalSection: {
+        backgroundColor: Colors.primaryLightBlue,
+        borderRadius: 8,
+        padding: 12,
+        marginTop: 8,
+    },
+    error: {
+        color: Colors.red,
+        marginTop: 4,
+        fontSize: 14,
+    },
+    success: {
+        color: Colors.green,
+        marginTop: 4,
+        fontSize: 14,
+        textAlign: "center",
+    },
+    button: {
+        marginTop: 16,
+        backgroundColor: Colors.green,
+        paddingVertical: 14,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    buttonDisabled: {
+        opacity: 0.65,
+    },
+    buttonText: {
+        color: Colors.text,
+        fontWeight: "600",
+        fontSize: 16,
+    },
+    confirmButton: {
+        marginTop: 8,
+        backgroundColor: Colors.primaryBlue,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    divider: {
+        height: 1,
+        backgroundColor: Colors.primaryLightBlue,
+        marginVertical: 16,
+    },
+    kindergartenList: {
+        gap: 8,
+    },
+    kindergartenItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 12,
+        backgroundColor: "#fff",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.primaryLightBlue,
+    },
+    kindergartenItemSelected: {
+        borderColor: Colors.green,
+        backgroundColor: "#F0FDF4",
+    },
+    kindergartenInfo: {
+        flex: 1,
+    },
+    kindergartenName: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: Colors.text,
+    },
+    kindergartenAddress: {
+        fontSize: 12,
+        color: Colors.textMuted,
+        marginTop: 2,
+    },
+});

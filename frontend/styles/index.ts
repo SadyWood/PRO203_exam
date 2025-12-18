@@ -13,6 +13,10 @@ export { PostsStyles } from "./postsStyles";
 export { EmployeeChildrenStyles } from "./employeeChildrenStyles";
 export { AdminStyles } from "./adminStyles";
 export { CalendarStyles } from "./calendar-styles";
+export { RegistrationStyles } from "./registrationStyles";
+export { DailySummaryStyles } from "./dailySummaryStyles";
+export { AddChildStyles } from "./addChildStyles";
+export { ChildDetailStyles } from "./childDetailStyles";
 
 
 

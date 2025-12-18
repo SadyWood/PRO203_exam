@@ -34,6 +34,10 @@ export const ParentProfileStyles = StyleSheet.create({
     color: Colors.text,
   },
 
+  nameContainer: {
+    flex: 1,
+  },
+
   section: {
     marginBottom: 22,
   },
@@ -115,5 +119,35 @@ export const ParentProfileStyles = StyleSheet.create({
   
   primaryBtnTextDanger: {
     color: "#B91C1C",
+  },
+
+  addButton: {
+    backgroundColor: Colors.green,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.text,
+  },
+
+  emptyText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+    fontStyle: "italic",
+    textAlign: "center",
+    paddingVertical: 12,
+  },
+
+  buttonMarginTop: {
+    marginTop: 10,
   },
 });

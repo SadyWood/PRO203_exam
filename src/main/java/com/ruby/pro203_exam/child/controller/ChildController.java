@@ -104,7 +104,7 @@ public class ChildController {
     public ResponseEntity<ChildResponseDto> createChild(@Valid @RequestBody CreateChildDto dto) {
         User user = securityUtils.getCurrentUser();
 
-        // Check if user can add a child to this kindergarten
+        // Check if user can add a child (kindergartenId is optional - parent can add later)
         if (!authorizationService.canAddChild(user.getId(), dto.getKindergartenId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

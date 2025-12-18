@@ -9,479 +9,434 @@ import {
     SafeAreaView,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/colors";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { calendarApi, CalendarEventResponseDto } from "@/services/staffApi";
 
 const API_BASE_URL = Platform.OS === "android"
     ? "http://10.0.2.2:8080"
     : "http://localhost:8080";
-
-const MOCK_AGENDA = [
-    {
-        childName: "Edith",
-        date: "09.01.26",
-        absentRegistered: true,
-        items: [
-            "Felles oppstart: 08:45",
-            "Tegne/puslespill: 09:00 - 10:00",
-            "Leseøkt: 10:15 - 10:45",
-            "Ryddetid: 10:45 - 11:00",
-            "Lunsj: 11:00, dagens varmmat: Pasta",
-            "Sovetid: 11:30",
-            "Stå opp og spise matpakke: 13:30",
-            "Leke ute i snøen kl 14:30",
-        ],
-        note: "Vi skal på tur, husk ekstra mat!",
-    },
-];
-
-type CheckStatus = "INN" | "UT";
-
-function statusKey(childId: string) {
-    return `checkin_status_${childId}`;
-}
-function timeKey(childId: string) {
-    return `checkin_time_${childId}`;
-}
 
 export default function HomeScreen() {
     const router = useRouter();
 
     const [userName, setUserName] = useState<string>("");
     const [children, setChildren] = useState<any[]>([]);
+    const [kindergartenName, setKindergartenName] = useState<string>("");
+    const [todayEvents, setTodayEvents] = useState<CalendarEventResponseDto[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Check-in status for first child (can be expanded for multiple children)
-    const [checkInStatus, setCheckInStatus] = useState<CheckStatus | null>(null);
+    const [checkInStatus, setCheckInStatus] = useState<"INN" | "UT" | null>(null);
     const [lastStatusChange, setLastStatusChange] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function loadUserData() {
-            try {
-                const userStr = await AsyncStorage.getItem("currentUser");
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const userStr = await AsyncStorage.getItem("currentUser");
+            if (!userStr) return;
 
-                if (userStr) {
-                    const user = JSON.parse(userStr);
+            const user = JSON.parse(userStr);
+            if (!user.profileId || user.role !== "PARENT") return;
 
-                    if (user.profileId && user.role === "PARENT") {
-                        await fetchParentProfile(user.profileId);
-                        await fetchChildren(user.profileId);
+            const token = await AsyncStorage.getItem("authToken");
+
+            // Fetch parent profile
+            const parentRes = await fetch(`${API_BASE_URL}/api/parents/${user.profileId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (parentRes.ok) {
+                const parentData = await parentRes.json();
+                setUserName(parentData.firstName || "");
+            }
+
+            // Fetch children
+            const childrenRes = await fetch(`${API_BASE_URL}/api/children/parent/${user.profileId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (childrenRes.ok) {
+                const childrenData = await childrenRes.json();
+                setChildren(childrenData);
+
+                if (childrenData.length > 0) {
+                    const firstChild = childrenData[0];
+                    setKindergartenName(firstChild.kindergartenName || "");
+
+                    // Load check-in status
+                    const storedStatus = await AsyncStorage.getItem(`checkin_status_${firstChild.id}`);
+                    const storedTime = await AsyncStorage.getItem(`checkin_time_${firstChild.id}`);
+                    if (storedStatus === "INN" || storedStatus === "UT") {
+                        setCheckInStatus(storedStatus);
+                    }
+                    setLastStatusChange(storedTime ?? null);
+
+                    // Fetch today's calendar events
+                    if (firstChild.kindergartenId) {
+                        const today = new Date().toISOString().split("T")[0];
+                        try {
+                            const events = await calendarApi.getEventsForParent(
+                                firstChild.kindergartenId,
+                                today,
+                                today
+                            );
+                            setTodayEvents(events || []);
+                        } catch (err) {
+                            console.log("Kalender feil:", err);
+                        }
                     }
                 }
-            } catch (error) {
-                console.log(error);
-            } finally {
-                setLoading(false);
             }
+        } catch (error) {
+            console.log("Feil ved lasting:", error);
+        } finally {
+            setLoading(false);
         }
-
-        loadUserData();
     }, []);
 
-    // Load check-in status when screen comes into focus
-    const loadCheckInStatus = useCallback(async () => {
-        if (children.length > 0) {
-            const childId = children[0].id;
-            try {
-                const storedStatus = await AsyncStorage.getItem(statusKey(childId));
-                const storedTime = await AsyncStorage.getItem(timeKey(childId));
+    useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-                if (storedStatus === "INN" || storedStatus === "UT") {
-                    setCheckInStatus(storedStatus);
-                } else {
-                    setCheckInStatus(null);
-                }
-
-                setLastStatusChange(storedTime ?? null);
-            } catch (err) {
-                console.log("Klarte ikke lese status:", err);
-            }
-        }
-    }, [children]);
-
-    useFocusEffect(
-        useCallback(() => {
-            loadCheckInStatus();
-        }, [loadCheckInStatus])
-    );
-
-    async function fetchParentProfile(parentId: string) {
-        try {
-            const token = await AsyncStorage.getItem("authToken");
-            const res = await fetch(`${API_BASE_URL}/api/parents/${parentId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            if (res.ok) {
-                const parentData = await res.json();
-                setUserName(parentData.firstName || "");
-                console.log("Parent profile:", parentData);
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    async function fetchChildren(parentId: string) {
-        try {
-            const token = await AsyncStorage.getItem("authToken");
-            const res = await fetch(`${API_BASE_URL}/api/children/parent/${parentId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setChildren(data);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
-    const isCheckedIn = checkInStatus === "INN";
     const firstChild = children.length > 0 ? children[0] : null;
+    const isCheckedIn = checkInStatus === "INN";
 
-    const statusText = firstChild
-        ? checkInStatus === "INN"
-            ? `${firstChild.firstName} er sjekket inn`
-            : checkInStatus === "UT"
-                ? `${firstChild.firstName} er sjekket ut`
-                : "Ingen status registrert"
-        : "Ingen barn registrert";
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={Colors.primaryBlue} />
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Header */}
+                {/* Header with app name */}
                 <View style={styles.headerWrapper}>
-                    <Text style={styles.appButtonText}>CHECK KID ✅</Text>
+                    <Text style={styles.appButtonText}>CHECK KID</Text>
                 </View>
 
-                {/* Kindergarten Title */}
-                <Text style={styles.bhgTitle}>Eventyrhagen Barnehage</Text>
-
-                {/* Parent Card */}
-                {loading ? (
-                    <View style={styles.parentCard}>
-                        <ActivityIndicator size="small" color={Colors.primaryBlue} />
-                    </View>
-                ) : (
-                    <View style={styles.parentCard}>
-                        <View>
-                            <Text style={styles.parentGreeting}>Hei {userName}!</Text>
-                            {children.length > 0 && (
-                                <Text style={styles.parentSub}>
-                                    Forelder til {children.map((c) => c.firstName).join(" og ")}
-                                </Text>
-                            )}
-                        </View>
-                    </View>
+                {/* Kindergarten name */}
+                {kindergartenName && (
+                    <Text style={styles.bhgTitle}>{kindergartenName}</Text>
                 )}
 
-                {/* Quick Actions */}
-                <View style={styles.quickActionsRow}>
-                    <PrimaryButton
-                        label="Registrer fravær"
-                        onPress={() => {}}
-                        variant="danger"
-                    />
-                    <PrimaryButton
-                        label="Bleieskift & søvn"
-                        onPress={() => router.push("/diaper-nap")}
-                        variant="brown"
-                    />
-                    <PrimaryButton
-                        label="Meldinger"
-                        onPress={() => router.push("/messages")}
-                    />
-                    <PrimaryButton
-                        label="Sjekk inn / ut"
-                        onPress={() => router.push("/checkin")}
-                    />
-                </View>
-
-                {/* Check-in Status Card */}
-                {firstChild && (
-                    <View style={styles.statusCard}>
-                        <Text style={styles.statusTitle}>
-                            Status for {firstChild.firstName}
-                        </Text>
-
-                        <View style={styles.statusRow}>
-                            <View
-                                style={[
-                                    styles.statusPill,
-                                    isCheckedIn ? styles.statusPillIn : styles.statusPillOut,
-                                ]}
-                            >
-                                <View
-                                    style={[
-                                        styles.statusDot,
-                                        isCheckedIn ? styles.statusDotIn : styles.statusDotOut,
-                                    ]}
-                                />
-                                <Text
-                                    style={[
-                                        styles.statusText,
-                                        isCheckedIn ? styles.statusTextIn : styles.statusTextOut,
-                                    ]}
-                                >
-                                    {statusText}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {lastStatusChange && (
-                            <Text style={styles.lastChangeText}>
-                                Sist oppdatert: {lastStatusChange}
+                {/* Parent greeting with inbox button */}
+                <View style={styles.greetingRow}>
+                    <View>
+                        <Text style={styles.parentGreeting}>Hei {userName}!</Text>
+                        {children.length > 0 && (
+                            <Text style={styles.parentSub}>
+                                Forelder til {children.map((c) => c.firstName).join(" og ")}
                             </Text>
                         )}
                     </View>
+                    <TouchableOpacity
+                        style={styles.inboxButton}
+                        onPress={() => router.push("/messages")}
+                    >
+                        <Ionicons name="mail-outline" size={24} color={Colors.text} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Primary action: Check in/out */}
+                {firstChild ? (
+                    <TouchableOpacity
+                        style={[styles.checkinCard, isCheckedIn ? styles.checkinCardIn : styles.checkinCardOut]}
+                        onPress={() => router.push("/checkin")}
+                        activeOpacity={0.85}
+                    >
+                        <View style={styles.checkinContent}>
+                            <Ionicons
+                                name={isCheckedIn ? "checkmark-circle" : "ellipse-outline"}
+                                size={40}
+                                color={isCheckedIn ? "#16A34A" : "#DC2626"}
+                            />
+                            <View style={styles.checkinTextContent}>
+                                <Text style={styles.checkinTitle}>
+                                    {isCheckedIn
+                                        ? `${firstChild.firstName} er sjekket inn`
+                                        : `${firstChild.firstName} er ikke sjekket inn`}
+                                </Text>
+                                {lastStatusChange && (
+                                    <Text style={styles.checkinSubtext}>Sist oppdatert: {lastStatusChange}</Text>
+                                )}
+                            </View>
+                        </View>
+                        <Text style={styles.checkinAction}>
+                            {isCheckedIn ? "Sjekk ut" : "Sjekk inn"} →
+                        </Text>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={styles.noChildCard}>
+                        <Text style={styles.noChildText}>Ingen barn registrert</Text>
+                        <TouchableOpacity
+                            style={styles.addChildButton}
+                            onPress={() => router.push("/profile")}
+                        >
+                            <Text style={styles.addChildButtonText}>Legg til barn</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
 
-                {/* Agenda for each child */}
-                {MOCK_AGENDA.map((agenda) => (
-                    <View key={agenda.childName} style={styles.agendaCard}>
-                        <Text style={styles.agendaTitle}>
-                            Dagens agenda {agenda.childName}:
-                        </Text>
-                        {agenda.absentRegistered && (
-                            <Text style={styles.absenceText}>Registrert fravær ❌</Text>
-                        )}
-                        <View style={styles.agendaBox}>
-                            <Text style={styles.agendaDate}>{agenda.date}</Text>
-                            {agenda.items.map((item) => (
-                                <Text key={item} style={styles.agendaItem}>
-                                    • {item}
-                                </Text>
-                            ))}
+                {/* Secondary actions row */}
+                <View style={styles.actionsRow}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.actionButtonDanger]}
+                        onPress={() => {}}
+                    >
+                        <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                        <Text style={styles.actionButtonTextLight}>Registrer fravær</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.actionButtonNeutral]}
+                        onPress={() => router.push("/day-summary")}
+                    >
+                        <Ionicons name="document-text-outline" size={20} color={Colors.text} />
+                        <Text style={styles.actionButtonText}>Dagens sammendrag</Text>
+                    </TouchableOpacity>
+                </View>
 
-                            {agenda.note && (
-                                <View style={styles.noteBox}>
-                                    <Text style={styles.noteTitle}>NB!</Text>
-                                    <Text style={styles.noteText}>{agenda.note}</Text>
-                                </View>
-                            )}
-                        </View>
+                {/* Today's events from calendar */}
+                <View style={styles.agendaCard}>
+                    <View style={styles.agendaHeader}>
+                        <Text style={styles.agendaTitle}>Dagens hendelser</Text>
+                        <TouchableOpacity onPress={() => router.push("/calendar")}>
+                            <Ionicons name="calendar-outline" size={20} color={Colors.primaryBlue} />
+                        </TouchableOpacity>
                     </View>
-                ))}
+                    <View style={styles.agendaBox}>
+                        <Text style={styles.agendaDate}>
+                            {new Date().toLocaleDateString("nb-NO", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                            })}
+                        </Text>
+                        {todayEvents.length === 0 ? (
+                            <Text style={styles.noEventsText}>Ingen hendelser planlagt for i dag</Text>
+                        ) : (
+                            todayEvents.map((event) => (
+                                <View key={event.id} style={styles.eventRow}>
+                                    {event.isSpecialOccasion && (
+                                        <Ionicons name="star" size={12} color={Colors.yellow} />
+                                    )}
+                                    <Text style={styles.agendaItem}>
+                                        {event.startTime ? `${event.startTime}: ` : "• "}
+                                        {event.title}
+                                        {event.groupName ? ` (${event.groupName})` : ""}
+                                    </Text>
+                                </View>
+                            ))
+                        )}
+                    </View>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-type ButtonVariant = "default" | "danger" | "brown";
-
-type ButtonProps = {
-    label: string;
-    onPress: () => void;
-    variant?: ButtonVariant;
-};
-
-function PrimaryButton({ label, onPress, variant = "default" }: ButtonProps) {
-    const backgroundColor =
-        variant === "danger"
-            ? Colors.red
-            : variant === "brown"
-                ? Colors.brown
-                : Colors.primaryBlue;
-
-    const textColor =
-        variant === "danger" || variant === "brown" ? "#FFFFFF" : "#111827";
-
-    return (
-        <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor }]}
-            onPress={onPress}
-            activeOpacity={0.85}
-        >
-            <Text style={[styles.primaryBtnText, { color: textColor }]}>{label}</Text>
-        </TouchableOpacity>
-    );
-}
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-    absenceText: {
-        fontSize: 12,
-        color: Colors.red,
-        marginBottom: 6,
+    safeArea: {
+        flex: 1,
+        backgroundColor: Colors.background,
     },
-    noteBox: {
-        marginTop: 10,
-        backgroundColor: Colors.yellow,
-        borderRadius: 8,
-        padding: 8,
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
     },
-    noteTitle: {
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 40,
+        width: "100%",
+        maxWidth: 500,
+        alignSelf: "center",
+    },
+    headerWrapper: {
+        alignSelf: "center",
+        backgroundColor: Colors.primaryBlue,
+        paddingHorizontal: 32,
+        paddingVertical: 12,
+        borderRadius: 14,
+        marginBottom: 16,
+    },
+    appButtonText: {
         fontWeight: "700",
-        fontSize: 12,
+        fontSize: 18,
+        letterSpacing: 0.5,
+        color: Colors.text,
     },
-    noteText: {
+    bhgTitle: {
+        textAlign: "center",
+        fontSize: 16,
+        fontWeight: "600",
+        marginBottom: 16,
+        color: Colors.textMuted,
+    },
+    greetingRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        backgroundColor: "#FFFFFF",
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: Colors.primaryLightBlue,
+        marginBottom: 16,
+    },
+    parentGreeting: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: Colors.text,
+    },
+    parentSub: {
+        fontSize: 13,
+        color: Colors.textMuted,
+        marginTop: 2,
+    },
+    inboxButton: {
+        padding: 10,
+        backgroundColor: Colors.primaryLightBlue,
+        borderRadius: 12,
+    },
+    checkinCard: {
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 16,
+    },
+    checkinCardIn: {
+        backgroundColor: "#DCFCE7",
+        borderWidth: 2,
+        borderColor: "#16A34A",
+    },
+    checkinCardOut: {
+        backgroundColor: "#FEE2E2",
+        borderWidth: 2,
+        borderColor: "#DC2626",
+    },
+    checkinContent: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+    checkinTextContent: {
+        flex: 1,
+    },
+    checkinTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: Colors.text,
+    },
+    checkinSubtext: {
         fontSize: 11,
+        color: Colors.textMuted,
+        marginTop: 2,
     },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-    width: "100%",
-    maxWidth: 500,
-    alignSelf: "center",
-  },
-
-  headerWrapper: {
-    alignSelf: "center",
-    backgroundColor: Colors.primaryBlue,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginBottom: 24,
-  },
-  appButtonText: {
-    fontWeight: "700",
-    fontSize: 18,
-    letterSpacing: 0.5,
-  },
-
-  bhgTitle: {
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 16,
-    color: Colors.text,
-  },
-
-  parentCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.primaryLightBlue,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  parentGreeting: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  parentSub: {
-    fontSize: 13,
-    color: Colors.textMuted,
-  },
-
-  quickActionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  primaryBtn: {
-    borderRadius: 999,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-    flexBasis: "48%",
-    alignItems: "center",
-  },
-  primaryBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  statusCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.primaryLightBlue,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 24,
-  },
-  statusTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 4,
-    color: Colors.text,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  statusPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-  },
-  statusPillIn: {
-    backgroundColor: "#DCFCE7",
-  },
-  statusPillOut: {
-    backgroundColor: "#FEE2E2",
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusDotIn: {
-    backgroundColor: "#16A34A",
-  },
-  statusDotOut: {
-    backgroundColor: "#DC2626",
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  statusTextIn: {
-    color: "#15803D",
-  },
-  statusTextOut: {
-    color: "#B91C1C",
-  },
-  lastChangeText: {
-    fontSize: 11,
-    color: Colors.textMuted,
-  },
-
-  agendaCard: {
-    marginBottom: 18,
-  },
-  agendaTitle: {
-    fontWeight: "700",
-    marginBottom: 4,
-    color: Colors.text,
-  },
-  agendaBox: {
-    backgroundColor: Colors.primaryLightBlue,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  agendaDate: {
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 6,
-    color: Colors.text,
-  },
-  agendaItem: {
-    fontSize: 12,
-    marginBottom: 2,
-    color: Colors.text,
-  },
+    checkinAction: {
+        textAlign: "right",
+        fontSize: 14,
+        fontWeight: "600",
+        color: Colors.text,
+        marginTop: 8,
+    },
+    noChildCard: {
+        backgroundColor: Colors.primaryLightBlue,
+        borderRadius: 16,
+        padding: 20,
+        alignItems: "center",
+        marginBottom: 16,
+    },
+    noChildText: {
+        fontSize: 14,
+        color: Colors.textMuted,
+        marginBottom: 12,
+    },
+    addChildButton: {
+        backgroundColor: Colors.primaryBlue,
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    addChildButtonText: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: Colors.text,
+    },
+    actionsRow: {
+        flexDirection: "row",
+        gap: 12,
+        marginBottom: 16,
+    },
+    actionButton: {
+        flex: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        paddingVertical: 12,
+        borderRadius: 12,
+    },
+    actionButtonDanger: {
+        backgroundColor: Colors.red,
+    },
+    actionButtonNeutral: {
+        backgroundColor: Colors.primaryBlue,
+    },
+    actionButtonText: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: Colors.text,
+    },
+    actionButtonTextLight: {
+        fontSize: 12,
+        fontWeight: "600",
+        color: "#fff",
+    },
+    agendaCard: {
+        backgroundColor: "#FFFFFF",
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: Colors.primaryLightBlue,
+        padding: 16,
+    },
+    agendaHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    agendaTitle: {
+        fontWeight: "700",
+        fontSize: 15,
+        color: Colors.text,
+    },
+    agendaBox: {
+        backgroundColor: Colors.primaryLightBlue,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+    },
+    agendaDate: {
+        fontSize: 12,
+        fontWeight: "700",
+        marginBottom: 8,
+        color: Colors.text,
+        textTransform: "capitalize",
+    },
+    noEventsText: {
+        fontSize: 12,
+        color: Colors.textMuted,
+        fontStyle: "italic",
+    },
+    eventRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        marginBottom: 4,
+    },
+    agendaItem: {
+        fontSize: 12,
+        color: Colors.text,
+    },
 });

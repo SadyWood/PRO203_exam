@@ -34,8 +34,8 @@ public class CreateChildDto {
     @Size(max = 50)
     private String groupName;
 
-    @NotNull(message = "Kindergarten is required")
-    private UUID kindergartenId; // Which kindergarten child attends
+    // Kindergarten is optional - can be assigned later by parent
+    private UUID kindergartenId;
 
     private UUID groupId;
 }
