@@ -6,17 +6,19 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  StyleSheet,
   Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Colors } from "@/constants/colors";
 import { getCurrentUser } from "@/services/authApi";
 import { groupApi, staffApi, childrenApi } from "@/services/staffApi";
+import { AdminStyles } from "@/styles";
 import type { GroupResponseDto, StaffResponseDto, ChildResponseDto } from "@/services/types/staff";
 import type { UserResponseDto } from "@/services/types/auth";
+
+// Manage Groups Screen - Create, edit and delete groups, set child capacity limit for groups. Add/remove children from groups.
 
 export default function ManageGroupsScreen() {
   const router = useRouter();
@@ -28,27 +30,33 @@ export default function ManageGroupsScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Modal state
+  // Modal state for create/edit group
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState<GroupResponseDto | null>(null);
   const [groupName, setGroupName] = useState("");
+  const [maxCapacity, setMaxCapacity] = useState("");
 
   // Members modal state
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupResponseDto | null>(null);
   const [membersTab, setMembersTab] = useState<"children" | "staff">("children");
 
+  // Local state for members modal to enable dynamic updates
+  const [modalChildren, setModalChildren] = useState<ChildResponseDto[]>([]);
+  const [modalStaffIds, setModalStaffIds] = useState<string[]>([]);
+
   useEffect(() => {
     loadData();
   }, []);
 
+ // Load all data needed for this screen
   async function loadData() {
     try {
       setLoading(true);
       const currentUser = await getCurrentUser();
       setUser(currentUser);
 
-      // Check if user is BOSS
+      // Only BOSS can access this screen
       if (currentUser?.role !== "BOSS") {
         Alert.alert("Ingen tilgang", "Du har ikke tilgang til denne siden.");
         router.back();
@@ -60,32 +68,7 @@ export default function ManageGroupsScreen() {
         setStaffProfile(staff);
 
         if (staff.kindergartenId) {
-          try {
-            const [groupsList, staffList, childrenList] = await Promise.all([
-              groupApi.getGroupsByKindergarten(staff.kindergartenId),
-              staffApi.getAllStaffAtKindergarten(),
-              childrenApi.getAllChildren(),
-            ]);
-
-            // Fetch staffIds for each group
-            const groupsWithStaff = await Promise.all(
-              (groupsList || []).map(async (group) => {
-                try {
-                  const staffIds = await groupApi.getStaffInGroup(group.id);
-                  return { ...group, staffIds };
-                } catch {
-                  return { ...group, staffIds: [] };
-                }
-              })
-            );
-
-            setGroups(groupsWithStaff);
-            setAllStaff(staffList || []);
-            setAllChildren(childrenList || []);
-          } catch (err) {
-            console.log("Feil ved uthenting av data:", err);
-            setGroups([]);
-          }
+          await loadGroupsAndMembers(staff.kindergartenId, currentUser.profileId);
         }
       }
     } catch (err) {
@@ -96,53 +79,55 @@ export default function ManageGroupsScreen() {
     }
   }
 
+// Load group and members data
+  async function loadGroupsAndMembers(kindergartenId: string, bossProfileId: string) {
+    try {
+      const [groupsList, staffList, childrenList] = await Promise.all([
+        groupApi.getGroupsByKindergarten(kindergartenId),
+        staffApi.getAllStaffAtKindergarten(),
+        childrenApi.getAllChildren(),
+      ]);
+
+      // Fetch staffIds for each group to show accurate counts
+      const groupsWithStaff = await Promise.all(
+        (groupsList || []).map(async (group) => {
+          try {
+            const staffIds = await groupApi.getStaffInGroup(group.id);
+            return { ...group, staffIds };
+          } catch {
+            return { ...group, staffIds: [] };
+          }
+        })
+      );
+
+      setGroups(groupsWithStaff);
+      // Filter out BOSS user - they should not be assigned to groups
+      const nonBossStaff = (staffList || []).filter(s => s.id !== bossProfileId);
+      setAllStaff(nonBossStaff);
+      setAllChildren(childrenList || []);
+    } catch (err) {
+      console.log("Feil ved uthenting av data:", err);
+      setGroups([]);
+    }
+  }
+
+  // Open modal to create a new group
   function openCreateModal() {
     setEditingGroup(null);
     setGroupName("");
+    setMaxCapacity("");
     setShowModal(true);
   }
 
+  // Open modal to edit an existing group
   function openEditModal(group: GroupResponseDto) {
     setEditingGroup(group);
     setGroupName(group.name);
+    setMaxCapacity(group.maxCapacity?.toString() || "");
     setShowModal(true);
   }
 
-  async function handleSaveGroup() {
-    if (!groupName.trim()) {
-      Alert.alert("Feil", "Gruppenavn er påkrevd.");
-      return;
-    }
-
-    if (!staffProfile?.kindergartenId) {
-      Alert.alert("Feil", "Kunne ikke finne barnehage.");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      if (editingGroup) {
-        // Update existing group
-        await groupApi.updateGroup(editingGroup.id, { name: groupName.trim() });
-        Alert.alert("Suksess", "Gruppen er oppdatert.");
-      } else {
-        // Create new group
-        await groupApi.createGroup({
-          name: groupName.trim(),
-          kindergartenId: staffProfile.kindergartenId,
-        });
-        Alert.alert("Suksess", "Gruppen er opprettet.");
-      }
-      setShowModal(false);
-      loadData(); // Reload groups
-    } catch (err: any) {
-      console.log("Feil ved lagring:", err);
-      Alert.alert("Feil", err?.message || "Kunne ikke lagre gruppen.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
+  /** Delete a group with confirmation */
   async function handleDeleteGroup(group: GroupResponseDto) {
     Alert.alert(
       "Slett gruppe",
@@ -166,117 +151,211 @@ export default function ManageGroupsScreen() {
     );
   }
 
-  function openMembersModal(group: GroupResponseDto) {
+  // save group
+    async function handleSaveGroup() {
+        if (!groupName.trim()) {
+            Alert.alert("Feil", "Gruppenavn er påkrevd.");
+            return;
+        }
+
+        if (!staffProfile?.kindergartenId) {
+            Alert.alert("Feil", "Kunne ikke finne barnehage.");
+            return;
+        }
+
+        // Parse maxCapacity
+        const capacity = maxCapacity.trim() ? parseInt(maxCapacity.trim(), 10) : undefined;
+        if (maxCapacity.trim() && (isNaN(capacity!) || capacity! < 1)) {
+            Alert.alert("Feil", "Kapasitet må være et positivt tall.");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            if (editingGroup) {
+                await groupApi.updateGroup(editingGroup.id, {
+                    name: groupName.trim(),
+                    maxCapacity: capacity,
+                });
+                Alert.alert("Suksess", "Gruppen er oppdatert.");
+            } else {
+                await groupApi.createGroup({
+                    name: groupName.trim(),
+                    kindergartenId: staffProfile.kindergartenId,
+                    maxCapacity: capacity,
+                });
+                Alert.alert("Suksess", "Gruppen er opprettet.");
+            }
+            setShowModal(false);
+            loadData();
+        } catch (err: any) {
+            console.log("Feil ved lagring:", err);
+            Alert.alert("Feil", err?.message || "Kunne ikke lagre gruppen.");
+        } finally {
+            setSaving(false);
+        }
+    }
+
+  // Open members modal for a group
+  async function openMembersModal(group: GroupResponseDto) {
     setSelectedGroup(group);
     setMembersTab("children");
+
+    // Initialize local state with current data
+    setModalChildren([...allChildren]);
+
+    // Fetch fresh staff IDs for this group
+    try {
+      const staffIds = await groupApi.getStaffInGroup(group.id);
+      setModalStaffIds(staffIds || []);
+    } catch {
+      setModalStaffIds(group.staffIds || []);
+    }
+
     setShowMembersModal(true);
   }
 
+  // Assign child to group - updates local state immediately
   async function handleAssignChild(childId: string) {
     if (!selectedGroup) return;
+
+    // Check capacity before assigning
+    const currentCount = modalChildren.filter(c => c.groupId === selectedGroup.id).length;
+    if (selectedGroup.maxCapacity && currentCount >= selectedGroup.maxCapacity) {
+      Alert.alert("Kapasitet full", `Gruppen har nådd maks kapasitet (${selectedGroup.maxCapacity} barn).`);
+      return;
+    }
+
     try {
       await groupApi.assignChildToGroup(selectedGroup.id, childId);
-      loadData();
+      // Update local state immediately for dynamic feedback
+      setModalChildren(prev =>
+        prev.map(c => c.id === childId ? { ...c, groupId: selectedGroup.id } : c)
+      );
     } catch (err: any) {
       Alert.alert("Feil", err?.message || "Kunne ikke legge til barnet.");
     }
   }
 
+// Close members modal and refresh main data
+    function closeMembersModal() {
+        setShowMembersModal(false);
+        setSelectedGroup(null);
+        loadData(); // Refresh to get updated counts
+    }
+
+// Remove child from group - updates local state immediately
   async function handleRemoveChild(childId: string) {
     if (!selectedGroup) return;
     try {
       await groupApi.removeChildFromGroup(selectedGroup.id, childId);
-      loadData();
+      // Update local state immediately for dynamic feedback
+      setModalChildren(prev =>
+        prev.map(c => c.id === childId ? { ...c, groupId: undefined } : c)
+      );
     } catch (err: any) {
       Alert.alert("Feil", err?.message || "Kunne ikke fjerne barnet.");
     }
   }
 
+// Assign staff to group - updates local state immediately
   async function handleAssignStaff(staffId: string) {
     if (!selectedGroup) return;
     try {
       await groupApi.assignStaffToGroup(selectedGroup.id, staffId, false);
-      loadData();
+      // Update local state immediately for dynamic feedback
+      setModalStaffIds(prev => [...prev, staffId]);
     } catch (err: any) {
       Alert.alert("Feil", err?.message || "Kunne ikke legge til ansatt.");
     }
   }
 
+// Remove staff from group - updates local state immediately
   async function handleRemoveStaff(staffId: string) {
     if (!selectedGroup) return;
     try {
       await groupApi.removeStaffFromGroup(selectedGroup.id, staffId);
-      loadData();
+      // Update local state immediately for dynamic feedback
+      setModalStaffIds(prev => prev.filter(id => id !== staffId));
     } catch (err: any) {
       Alert.alert("Feil", err?.message || "Kunne ikke fjerne ansatt.");
     }
   }
 
-  // Get children assigned to current group
-  const childrenInGroup = allChildren.filter(c => c.groupId === selectedGroup?.id);
-  const childrenNotInGroup = allChildren.filter(c => c.groupId !== selectedGroup?.id);
-
-  // Get staff assigned to current group (from group's staffIds)
-  const staffInGroup = allStaff.filter(s => selectedGroup?.staffIds?.includes(s.id));
-  const staffNotInGroup = allStaff.filter(s => !selectedGroup?.staffIds?.includes(s.id));
+  // Computed values for members modal
+  const childrenInGroup = modalChildren.filter(c => c.groupId === selectedGroup?.id);
+  const childrenNotInGroup = modalChildren.filter(c => !c.groupId || c.groupId !== selectedGroup?.id);
+  const staffInGroup = allStaff.filter(s => modalStaffIds.includes(s.id));
+  const staffNotInGroup = allStaff.filter(s => !modalStaffIds.includes(s.id));
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <View style={[AdminStyles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color={Colors.primaryBlue} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+    <View style={AdminStyles.container}>
+      {/* Header with back button and add button */}
+      <View style={AdminStyles.header}>
+        <Pressable onPress={() => router.replace("/(staff)/admin/administration")} style={AdminStyles.backButton}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </Pressable>
-        <Text style={styles.title}>Administrer grupper</Text>
-        <Pressable onPress={openCreateModal} style={styles.addButton}>
+        <Text style={AdminStyles.title}>Administrer grupper</Text>
+        <Pressable onPress={openCreateModal} style={AdminStyles.addButton}>
           <Ionicons name="add" size={24} color={Colors.primaryBlue} />
         </Pressable>
       </View>
 
       {/* Groups List */}
-      <ScrollView style={styles.listContainer}>
+      <ScrollView style={AdminStyles.listContainer}>
         {groups.length === 0 ? (
-          <View style={styles.emptyState}>
+          <View style={AdminStyles.emptyState}>
             <Ionicons name="people-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>Ingen grupper funnet</Text>
-            <Text style={styles.emptySubtext}>Trykk + for å opprette en gruppe</Text>
+            <Text style={AdminStyles.emptyText}>Ingen grupper funnet</Text>
+            <Text style={AdminStyles.emptySubtext}>Trykk + for å opprette en gruppe</Text>
           </View>
         ) : (
           groups.map((group) => {
             const childCount = allChildren.filter(c => c.groupId === group.id).length;
             const staffCount = group.staffIds?.length ?? 0;
+            const capacityText = group.maxCapacity
+              ? `${childCount}/${group.maxCapacity} barn`
+              : `${childCount} barn`;
+            const isAtCapacity = group.maxCapacity != null && group.maxCapacity > 0 && childCount >= group.maxCapacity;
+
             return (
-              <View key={group.id} style={styles.groupCard}>
-                <View style={styles.groupInfo}>
-                  <Text style={styles.groupName}>{group.name}</Text>
-                  <Text style={styles.groupStats}>
-                    {childCount} barn, {staffCount} ansatte
+              <View key={group.id} style={[AdminStyles.card, { justifyContent: "space-between" }]}>
+                <View style={AdminStyles.cardInfo}>
+                  <Text style={AdminStyles.cardTitle}>{group.name}</Text>
+                  <Text style={[
+                    AdminStyles.cardSubtitle,
+                    isAtCapacity ? { color: "#B91C1C" } : null
+                  ]}>
+                    {capacityText}, {staffCount} ansatte
                   </Text>
                 </View>
-                <View style={styles.groupActions}>
+                <View style={AdminStyles.cardActions}>
+                  {/* Members button */}
                   <Pressable
                     onPress={() => openMembersModal(group)}
-                    style={styles.actionButton}
+                    style={AdminStyles.actionButton}
                   >
                     <Ionicons name="people-outline" size={20} color={Colors.primaryBlue} />
                   </Pressable>
+                  {/* Edit button */}
                   <Pressable
                     onPress={() => openEditModal(group)}
-                    style={styles.actionButton}
+                    style={AdminStyles.actionButton}
                   >
                     <Ionicons name="pencil-outline" size={20} color={Colors.primaryBlue} />
                   </Pressable>
+                  {/* Delete button */}
                   <Pressable
                     onPress={() => handleDeleteGroup(group)}
-                    style={styles.actionButton}
+                    style={AdminStyles.actionButton}
                   >
                     <Ionicons name="trash-outline" size={20} color="#B91C1C" />
                   </Pressable>
@@ -287,17 +366,17 @@ export default function ManageGroupsScreen() {
         )}
       </ScrollView>
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Group Modal */}
       <Modal
         visible={showModal}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setShowModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
+        <View style={AdminStyles.modalOverlay}>
+          <View style={AdminStyles.modalContent}>
+            <View style={AdminStyles.modalHeader}>
+              <Text style={AdminStyles.modalTitle}>
                 {editingGroup ? "Rediger gruppe" : "Ny gruppe"}
               </Text>
               <Pressable onPress={() => setShowModal(false)}>
@@ -305,24 +384,34 @@ export default function ManageGroupsScreen() {
               </Pressable>
             </View>
 
-            <Text style={styles.label}>Gruppenavn *</Text>
+            <Text style={AdminStyles.label}>Gruppenavn *</Text>
             <TextInput
-              style={styles.input}
+              style={AdminStyles.input}
               value={groupName}
               onChangeText={setGroupName}
               placeholder="F.eks. Avdeling Bjørn"
               placeholderTextColor={Colors.textMuted}
             />
 
+            <Text style={AdminStyles.label}>Maks antall barn (valgfritt)</Text>
+            <TextInput
+              style={AdminStyles.input}
+              value={maxCapacity}
+              onChangeText={setMaxCapacity}
+              placeholder="F.eks. 18"
+              placeholderTextColor={Colors.textMuted}
+              keyboardType="number-pad"
+            />
+
             <Pressable
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+              style={[AdminStyles.saveButton, saving && AdminStyles.saveButtonDisabled]}
               onPress={handleSaveGroup}
               disabled={saving}
             >
               {saving ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>
+                <Text style={AdminStyles.saveButtonText}>
                   {editingGroup ? "Oppdater" : "Opprett"}
                 </Text>
               )}
@@ -336,34 +425,57 @@ export default function ManageGroupsScreen() {
         visible={showMembersModal}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setShowMembersModal(false)}
+        onRequestClose={closeMembersModal}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: "80%" }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
+        <View style={AdminStyles.modalOverlay}>
+          <View style={[AdminStyles.modalContent, { maxHeight: "80%" }]}>
+            <View style={AdminStyles.modalHeader}>
+              <Text style={AdminStyles.modalTitle}>
                 {selectedGroup?.name} - Medlemmer
               </Text>
-              <Pressable onPress={() => setShowMembersModal(false)}>
+              <Pressable onPress={closeMembersModal}>
                 <Ionicons name="close" size={24} color={Colors.text} />
               </Pressable>
             </View>
 
+            {/* Capacity indicator */}
+            {selectedGroup?.maxCapacity && (
+              <View style={{
+                backgroundColor: childrenInGroup.length >= selectedGroup.maxCapacity
+                  ? "#FEE2E2"
+                  : Colors.primaryLightBlue,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 8,
+                marginBottom: 12,
+              }}>
+                <Text style={{
+                  fontSize: 13,
+                  color: childrenInGroup.length >= selectedGroup.maxCapacity
+                    ? "#B91C1C"
+                    : Colors.text,
+                  textAlign: "center",
+                }}>
+                  Kapasitet: {childrenInGroup.length}/{selectedGroup.maxCapacity} barn
+                </Text>
+              </View>
+            )}
+
             {/* Tab buttons */}
-            <View style={styles.tabRow}>
+            <View style={AdminStyles.tabRow}>
               <Pressable
-                style={[styles.tabButton, membersTab === "children" && styles.tabButtonActive]}
+                style={[AdminStyles.tabButton, membersTab === "children" && AdminStyles.tabButtonActive]}
                 onPress={() => setMembersTab("children")}
               >
-                <Text style={[styles.tabButtonText, membersTab === "children" && styles.tabButtonTextActive]}>
+                <Text style={[AdminStyles.tabButtonText, membersTab === "children" && AdminStyles.tabButtonTextActive]}>
                   Barn
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.tabButton, membersTab === "staff" && styles.tabButtonActive]}
+                style={[AdminStyles.tabButton, membersTab === "staff" && AdminStyles.tabButtonActive]}
                 onPress={() => setMembersTab("staff")}
               >
-                <Text style={[styles.tabButtonText, membersTab === "staff" && styles.tabButtonTextActive]}>
+                <Text style={[AdminStyles.tabButtonText, membersTab === "staff" && AdminStyles.tabButtonTextActive]}>
                   Ansatte
                 </Text>
               </Pressable>
@@ -373,13 +485,13 @@ export default function ManageGroupsScreen() {
               {membersTab === "children" ? (
                 <>
                   {/* Children in group */}
-                  <Text style={styles.sectionLabel}>I gruppen:</Text>
+                  <Text style={AdminStyles.sectionLabel}>I gruppen:</Text>
                   {childrenInGroup.length === 0 ? (
-                    <Text style={styles.emptyListText}>Ingen barn i gruppen</Text>
+                    <Text style={AdminStyles.emptyListText}>Ingen barn i gruppen</Text>
                   ) : (
                     childrenInGroup.map((child) => (
-                      <View key={child.id} style={styles.memberRow}>
-                        <Text style={styles.memberName}>
+                      <View key={child.id} style={AdminStyles.memberRow}>
+                        <Text style={AdminStyles.memberName}>
                           {child.firstName} {child.lastName}
                         </Text>
                         <Pressable onPress={() => handleRemoveChild(child.id)}>
@@ -390,15 +502,22 @@ export default function ManageGroupsScreen() {
                   )}
 
                   {/* Children not in group */}
-                  <Text style={[styles.sectionLabel, { marginTop: 16 }]}>Legg til:</Text>
+                  <Text style={[AdminStyles.sectionLabel, { marginTop: 16 }]}>Legg til:</Text>
                   {childrenNotInGroup.length === 0 ? (
-                    <Text style={styles.emptyListText}>Alle barn er allerede i en gruppe</Text>
+                    <Text style={AdminStyles.emptyListText}>Alle barn er allerede i en gruppe</Text>
                   ) : (
                     childrenNotInGroup.map((child) => (
-                      <View key={child.id} style={styles.memberRow}>
-                        <Text style={styles.memberName}>
-                          {child.firstName} {child.lastName}
-                        </Text>
+                      <View key={child.id} style={AdminStyles.memberRow}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={AdminStyles.memberName}>
+                            {child.firstName} {child.lastName}
+                          </Text>
+                          {child.groupName && (
+                            <Text style={{ fontSize: 11, color: Colors.textMuted }}>
+                              Nå i: {child.groupName}
+                            </Text>
+                          )}
+                        </View>
                         <Pressable onPress={() => handleAssignChild(child.id)}>
                           <Ionicons name="add-circle-outline" size={24} color={Colors.primaryBlue} />
                         </Pressable>
@@ -409,15 +528,22 @@ export default function ManageGroupsScreen() {
               ) : (
                 <>
                   {/* Staff in group */}
-                  <Text style={styles.sectionLabel}>I gruppen:</Text>
+                  <Text style={AdminStyles.sectionLabel}>I gruppen:</Text>
                   {staffInGroup.length === 0 ? (
-                    <Text style={styles.emptyListText}>Ingen ansatte i gruppen</Text>
+                    <Text style={AdminStyles.emptyListText}>Ingen ansatte i gruppen</Text>
                   ) : (
                     staffInGroup.map((staff) => (
-                      <View key={staff.id} style={styles.memberRow}>
-                        <Text style={styles.memberName}>
-                          {staff.firstName} {staff.lastName}
-                        </Text>
+                      <View key={staff.id} style={AdminStyles.memberRow}>
+                        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <Text style={AdminStyles.memberName}>
+                            {staff.firstName} {staff.lastName}
+                          </Text>
+                          {staff.isAdmin && (
+                            <View style={AdminStyles.adminBadge}>
+                              <Text style={AdminStyles.adminBadgeText}>Admin</Text>
+                            </View>
+                          )}
+                        </View>
                         <Pressable onPress={() => handleRemoveStaff(staff.id)}>
                           <Ionicons name="remove-circle-outline" size={24} color="#B91C1C" />
                         </Pressable>
@@ -426,15 +552,22 @@ export default function ManageGroupsScreen() {
                   )}
 
                   {/* Staff not in group */}
-                  <Text style={[styles.sectionLabel, { marginTop: 16 }]}>Legg til:</Text>
+                  <Text style={[AdminStyles.sectionLabel, { marginTop: 16 }]}>Legg til:</Text>
                   {staffNotInGroup.length === 0 ? (
-                    <Text style={styles.emptyListText}>Alle ansatte er allerede i gruppen</Text>
+                    <Text style={AdminStyles.emptyListText}>Alle ansatte er allerede i gruppen</Text>
                   ) : (
                     staffNotInGroup.map((staff) => (
-                      <View key={staff.id} style={styles.memberRow}>
-                        <Text style={styles.memberName}>
-                          {staff.firstName} {staff.lastName}
-                        </Text>
+                      <View key={staff.id} style={AdminStyles.memberRow}>
+                        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <Text style={AdminStyles.memberName}>
+                            {staff.firstName} {staff.lastName}
+                          </Text>
+                          {staff.isAdmin && (
+                            <View style={AdminStyles.adminBadge}>
+                              <Text style={AdminStyles.adminBadgeText}>Admin</Text>
+                            </View>
+                          )}
+                        </View>
                         <Pressable onPress={() => handleAssignStaff(staff.id)}>
                           <Ionicons name="add-circle-outline" size={24} color={Colors.primaryBlue} />
                         </Pressable>
@@ -450,183 +583,3 @@ export default function ManageGroupsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    padding: 20,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  addButton: {
-    padding: 4,
-  },
-  listContainer: {
-    flex: 1,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-    marginTop: 12,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: Colors.textMuted,
-    marginTop: 4,
-  },
-  groupCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.primaryLightBlue,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  groupInfo: {
-    flex: 1,
-  },
-  groupName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  groupStats: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  groupActions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    padding: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: Colors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    backgroundColor: "#FFFFFF",
-    color: Colors.text,
-    marginBottom: 20,
-  },
-  saveButton: {
-    backgroundColor: Colors.primaryBlue,
-    borderRadius: 999,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  saveButtonDisabled: {
-    opacity: 0.7,
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  tabRow: {
-    flexDirection: "row",
-    marginBottom: 16,
-    gap: 8,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.primaryLightBlue,
-    alignItems: "center",
-  },
-  tabButtonActive: {
-    backgroundColor: Colors.primaryBlue,
-  },
-  tabButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text,
-  },
-  tabButtonTextActive: {
-    color: "#fff",
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  emptyListText: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    fontStyle: "italic",
-    marginBottom: 8,
-  },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: Colors.primaryLightBlue,
-  },
-  memberName: {
-    fontSize: 14,
-    color: Colors.text,
-  },
-});
