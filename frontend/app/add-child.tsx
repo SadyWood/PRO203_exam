@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AddChildStyles as styles } from "@/styles";
@@ -46,6 +47,10 @@ export default function AddChildScreen() {
     // Refs for auto-focus
     const monthRef = useRef<TextInput>(null);
     const yearRef = useRef<TextInput>(null);
+
+    // Calendar picker state
+    const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+    const [calendarDate, setCalendarDate] = useState(new Date(2022, 0, 1));
 
     // Health data toggle and fields
     const [addHealthLater, setAddHealthLater] = useState(true);
@@ -129,6 +134,31 @@ export default function AddChildScreen() {
         const formattedMonth = String(month).padStart(2, "0");
         const formattedDay = String(day).padStart(2, "0");
         return `${year}-${formattedMonth}-${formattedDay}`;
+    };
+
+    // Handle calendar date selection
+    const onCalendarDateChange = (event: any, selectedDate?: Date) => {
+        if (Platform.OS === "android") {
+            setShowCalendarPicker(false);
+        }
+
+        if (event.type === "dismissed") {
+            return;
+        }
+
+        if (selectedDate) {
+            setCalendarDate(selectedDate);
+            setBirthDay(String(selectedDate.getDate()).padStart(2, "0"));
+            setBirthMonth(String(selectedDate.getMonth() + 1).padStart(2, "0"));
+            setBirthYear(String(selectedDate.getFullYear()));
+        }
+    };
+
+    const confirmCalendarDate = () => {
+        setShowCalendarPicker(false);
+        setBirthDay(String(calendarDate.getDate()).padStart(2, "0"));
+        setBirthMonth(String(calendarDate.getMonth() + 1).padStart(2, "0"));
+        setBirthYear(String(calendarDate.getFullYear()));
     };
 
     const handleAddChild = async () => {
@@ -330,7 +360,47 @@ export default function AddChildScreen() {
                             />
                             <Text style={styles.dateInputLabel}>År</Text>
                         </View>
+
+                        {/* Calendar picker button */}
+                        <TouchableOpacity
+                            style={styles.calendarButton}
+                            onPress={() => setShowCalendarPicker(true)}
+                        >
+                            <Ionicons name="calendar-outline" size={24} color={Colors.primaryBlue} />
+                        </TouchableOpacity>
                     </View>
+
+                    {/* Calendar picker */}
+                    {showCalendarPicker && (
+                        Platform.OS === "ios" ? (
+                            <View style={styles.calendarPickerContainer}>
+                                <DateTimePicker
+                                    value={calendarDate}
+                                    mode="date"
+                                    display="spinner"
+                                    onChange={onCalendarDateChange}
+                                    maximumDate={new Date()}
+                                    minimumDate={new Date(2010, 0, 1)}
+                                    locale="nb-NO"
+                                />
+                                <TouchableOpacity
+                                    style={styles.calendarConfirmButton}
+                                    onPress={confirmCalendarDate}
+                                >
+                                    <Text style={styles.calendarConfirmButtonText}>Bekreft dato</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <DateTimePicker
+                                value={calendarDate}
+                                mode="date"
+                                display="default"
+                                onChange={onCalendarDateChange}
+                                maximumDate={new Date()}
+                                minimumDate={new Date(2010, 0, 1)}
+                            />
+                        )
+                    )}
 
                     <View style={styles.divider} />
 

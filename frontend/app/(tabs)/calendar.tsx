@@ -116,7 +116,8 @@ export default function CalendarScreen() {
 
       // Fetch children to get kindergartenId and group name
       const token = await AsyncStorage.getItem("authToken");
-      const childrenRes = await fetch(`${API_BASE_URL}/api/children/parent/${user.profileId}`, {
+      // Use /api/children which auto-filters by authenticated parent
+      const childrenRes = await fetch(`${API_BASE_URL}/api/children`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

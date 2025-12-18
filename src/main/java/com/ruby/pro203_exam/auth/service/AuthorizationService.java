@@ -185,6 +185,12 @@ public class AuthorizationService {
         return isStaffAt(userId, kindergartenId);
     }
 
+    // Get staff's kindergarten ID
+    public UUID getStaffKindergartenId(UUID staffProfileId) {
+        Staff staff = getStaffProfile(staffProfileId);
+        return staff.getKindergartenId();
+    }
+
     // ------------------------------------- HELPER METHODS ------------------------------------- //
 
     private User getUser(UUID userId) {

@@ -77,8 +77,12 @@ public class CheckInOut {
 
     @PrePersist
     protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
         if (checkInTime == null) {
-            checkInTime = LocalDateTime.now();
+            checkInTime = now;
+        }
+        if (createdAt == null) {
+            createdAt = now;
         }
     }
 }

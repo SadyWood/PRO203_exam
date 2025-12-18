@@ -35,7 +35,34 @@ public class CheckerController {
             throw new AccessDeniedException("Cannot check in this child");
         }
 
-        return ResponseEntity.ok(checkerService.checkIn(dto, user.getProfileId()));
+        boolean isStaff = user.getRole() == UserRole.STAFF || user.getRole() == UserRole.BOSS;
+        return ResponseEntity.ok(checkerService.checkIn(dto, user.getProfileId(), isStaff));
+    }
+
+    @PostMapping("/confirm/{checkInId}")
+    public ResponseEntity<CheckerResponseDto> confirmCheckIn(@PathVariable UUID checkInId) {
+        User user = securityUtils.getCurrentUser();
+
+        // Only staff can confirm check-ins
+        if (user.getRole() == UserRole.PARENT) {
+            throw new AccessDeniedException("Only staff can confirm check-ins");
+        }
+
+        return ResponseEntity.ok(checkerService.confirmCheckIn(checkInId, user.getProfileId()));
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<CheckerResponseDto>> getPendingConfirmations() {
+        User user = securityUtils.getCurrentUser();
+
+        // Only staff can see pending check-ins
+        if (user.getRole() == UserRole.PARENT) {
+            throw new AccessDeniedException("Only staff can view pending check-ins");
+        }
+
+        // Get kindergarten ID from staff profile
+        UUID kindergartenId = authService.getStaffKindergartenId(user.getProfileId());
+        return ResponseEntity.ok(checkerService.getPendingConfirmations(kindergartenId));
     }
 
     @PostMapping("/check-out")
@@ -74,5 +101,19 @@ public class CheckerController {
 
         log.info("History for child: {}", childId);
         return ResponseEntity.ok(checkerService.getChildHistory(childId));
+    }
+
+    @GetMapping("/status/{childId}")
+    public ResponseEntity<CheckerResponseDto> getChildStatus(@PathVariable UUID childId) {
+        User user = securityUtils.getCurrentUser();
+
+        // Parents can only see their own children's status
+        if (!authService.canViewChild(user.getId(), childId)) {
+            throw new AccessDeniedException("Cannot view status for this child");
+        }
+
+        log.info("Status for child: {}", childId);
+        CheckerResponseDto status = checkerService.getActiveCheckIn(childId);
+        return ResponseEntity.ok(status);
     }
 }

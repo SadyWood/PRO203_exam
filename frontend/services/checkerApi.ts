@@ -14,7 +14,10 @@ const USE_BACKEND =
 export interface CheckerClient {
   checkIn(dto: CheckInDto): Promise<CheckerResponseDto>;
   checkOut(dto: CheckOutDto): Promise<CheckerResponseDto>;
+  confirmCheckIn(checkInId: string): Promise<CheckerResponseDto>;
   getActive(): Promise<CheckerResponseDto[]>;
+  getPending(): Promise<CheckerResponseDto[]>;
+  getChildStatus(childId: string): Promise<CheckerResponseDto | null>;
   getChildHistory(childId: string): Promise<CheckerResponseDto[]>;
 }
 

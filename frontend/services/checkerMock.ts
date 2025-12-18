@@ -118,11 +118,43 @@ export const checkerMock = {
     });
   },
 
-  
+  async confirmCheckIn(checkInId: string): Promise<CheckerResponseDto> {
+    // Mock: just return a confirmed response
+    return {
+      id: checkInId,
+      childId: "",
+      checkInDate: nowIso(),
+      droppedOffBy: null,
+      droppedOffPersonType: null,
+      droppedOffPersonName: null,
+      droppedOffConfirmedBy: "mock-staff-id",
+      checkOutDate: null,
+      pickedUpBy: null,
+      pickedUpPersonType: null,
+      pickedUpPersonName: null,
+      pickedUpConfirmedBy: null,
+      pickedUpConfirmed: false,
+      notes: null,
+      initializedOn: nowIso(),
+    };
+  },
+
   async getActive(): Promise<CheckerResponseDto[]> {
     const all = await loadAll();
     const active = all.filter((s) => s.status === "INN");
     return active.map((s) => toResponseFromLocal(s));
+  },
+
+  async getPending(): Promise<CheckerResponseDto[]> {
+    // Mock: return empty for now
+    return [];
+  },
+
+  async getChildStatus(childId: string): Promise<CheckerResponseDto | null> {
+    const all = await loadAll();
+    const item = all.find((s) => s.childId === childId && s.status === "INN");
+    if (!item) return null;
+    return toResponseFromLocal(item);
   },
 
   async getChildHistory(childId: string): Promise<CheckerResponseDto[]> {

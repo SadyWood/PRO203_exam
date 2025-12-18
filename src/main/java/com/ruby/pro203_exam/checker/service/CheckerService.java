@@ -23,7 +23,7 @@ public class CheckerService {
 
     private final CheckerRepository checkerRepository;
 
-    public CheckerResponseDto checkIn(CheckInDto dto, UUID confirmedByStaff) {
+    public CheckerResponseDto checkIn(CheckInDto dto, UUID userId, boolean isStaff) {
         log.info("Child for checking in: {}", dto.getChildId());
 
         // Check if already checked in
@@ -38,13 +38,37 @@ public class CheckerService {
                 .droppedOffBy(dto.getDroppedOffBy())
                 .droppedOffByType(dto.getDroppedOffPersonType())
                 .droppedOffByName(dto.getDroppedOffPersonName())
-                .checkInConfirmedByStaff(confirmedByStaff) // Use passed-in staff ID
+                // Only set confirmation if staff is doing the check-in
+                .checkInConfirmedByStaff(isStaff ? userId : null)
                 .notes(dto.getNotes())
                 .build();
 
         CheckInOut savedCheckIn = checkerRepository.save(checkIn);
         log.info("Saved checkIn: {}", savedCheckIn.getId());
         return toResponseDto(savedCheckIn);
+    }
+
+    public CheckerResponseDto confirmCheckIn(UUID checkInId, UUID staffId) {
+        log.info("Confirming check-in: {} by staff: {}", checkInId, staffId);
+
+        CheckInOut checkIn = checkerRepository.findById(checkInId)
+                .orElseThrow(() -> new RuntimeException("Check-in not found"));
+
+        if (checkIn.getCheckInConfirmedByStaff() != null) {
+            throw new RuntimeException("Check-in already confirmed");
+        }
+
+        checkIn.setCheckInConfirmedByStaff(staffId);
+        CheckInOut saved = checkerRepository.save(checkIn);
+        log.info("Check-in confirmed: {}", saved.getId());
+        return toResponseDto(saved);
+    }
+
+    public List<CheckerResponseDto> getPendingConfirmations(UUID kindergartenId) {
+        log.info("Finding pending check-ins for kindergarten: {}", kindergartenId);
+        return checkerRepository.findPendingConfirmationsByKindergarten(kindergartenId).stream()
+                .map(this::toResponseDto)
+                .collect(Collectors.toList());
     }
 
     public CheckerResponseDto checkOut(CheckOutDto dto, UUID approvedByStaff) {
@@ -81,7 +105,13 @@ public class CheckerService {
         return checkerRepository.findByChildIdOrderByCheckInTimeDesc(childId).stream()
                 .map(this::toResponseDto)
                 .collect(Collectors.toList());
+    }
 
+    public CheckerResponseDto getActiveCheckIn(UUID childId) {
+        log.info("Finding active check-in for child: {}", childId);
+        return checkerRepository.findActiveCheckInByChildId(childId)
+                .map(this::toResponseDto)
+                .orElse(null);
     }
 
     private CheckerResponseDto toResponseDto(CheckInOut savedCheckers) {

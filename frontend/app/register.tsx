@@ -1,5 +1,5 @@
 import { Stack, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,8 +9,10 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  Modal,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { authRefresh } from "./_layout";
@@ -35,9 +37,17 @@ export default function RegisterScreen() {
   const [wantsToAddChild, setWantsToAddChild] = useState(false);
   const [childFirstName, setChildFirstName] = useState("");
   const [childLastName, setChildLastName] = useState("");
-  const [childBirthDate, setChildBirthDate] = useState("");
-  const [childBirthDateObj, setChildBirthDateObj] = useState(new Date(2022, 0, 1));
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Date input as separate fields
+  const [birthDay, setBirthDay] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthYear, setBirthYear] = useState("");
+  const monthRef = useRef<TextInput>(null);
+  const yearRef = useRef<TextInput>(null);
+
+  // Calendar picker state
+  const [showCalendarPicker, setShowCalendarPicker] = useState(false);
+  const [calendarDate, setCalendarDate] = useState(new Date(2022, 0, 1));
 
   const [kindergartenId, setKindergartenId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
@@ -69,10 +79,59 @@ export default function RegisterScreen() {
     }
   }
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
-    // On Android, dismiss picker after selection
+  // Handle day input with auto-focus
+  const handleDayChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, "");
+    if (cleaned.length <= 2) {
+      setBirthDay(cleaned);
+      if (cleaned.length === 2) {
+        monthRef.current?.focus();
+      }
+    }
+  };
+
+  // Handle month input with auto-focus
+  const handleMonthChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, "");
+    if (cleaned.length <= 2) {
+      setBirthMonth(cleaned);
+      if (cleaned.length === 2) {
+        yearRef.current?.focus();
+      }
+    }
+  };
+
+  // Handle year input
+  const handleYearChange = (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, "");
+    if (cleaned.length <= 4) {
+      setBirthYear(cleaned);
+    }
+  };
+
+  // Get formatted birth date for API
+  const getFormattedBirthDate = (): string | null => {
+    const day = parseInt(birthDay, 10);
+    const month = parseInt(birthMonth, 10);
+    const year = parseInt(birthYear, 10);
+
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+      return null;
+    }
+
+    if (day < 1 || day > 31) return null;
+    if (month < 1 || month > 12) return null;
+    if (year < 2010 || year > new Date().getFullYear()) return null;
+
+    const formattedMonth = String(month).padStart(2, "0");
+    const formattedDay = String(day).padStart(2, "0");
+    return `${year}-${formattedMonth}-${formattedDay}`;
+  };
+
+  // Handle calendar date selection
+  const onCalendarDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === "android") {
-      setShowDatePicker(false);
+      setShowCalendarPicker(false);
     }
 
     if (event.type === "dismissed") {
@@ -80,30 +139,18 @@ export default function RegisterScreen() {
     }
 
     if (selectedDate) {
-      setChildBirthDateObj(selectedDate);
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-      const day = String(selectedDate.getDate()).padStart(2, "0");
-      const formatted = `${year}-${month}-${day}`;
-      setChildBirthDate(formatted);
+      setCalendarDate(selectedDate);
+      setBirthDay(String(selectedDate.getDate()).padStart(2, "0"));
+      setBirthMonth(String(selectedDate.getMonth() + 1).padStart(2, "0"));
+      setBirthYear(String(selectedDate.getFullYear()));
     }
   };
 
-  const handleDatePickerPress = () => {
-    setShowDatePicker(true);
-  };
-
-  const confirmIOSDate = () => {
-    setShowDatePicker(false);
-    // Date is already set via onDateChange
-    if (!childBirthDate) {
-      // Set default if no date selected yet
-      const date = childBirthDateObj;
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      setChildBirthDate(`${year}-${month}-${day}`);
-    }
+  const confirmCalendarDate = () => {
+    setShowCalendarPicker(false);
+    setBirthDay(String(calendarDate.getDate()).padStart(2, "0"));
+    setBirthMonth(String(calendarDate.getMonth() + 1).padStart(2, "0"));
+    setBirthYear(String(calendarDate.getFullYear()));
   };
 
   async function handleRegister() {
@@ -124,7 +171,8 @@ export default function RegisterScreen() {
 
     // Validate child data if user wants to add child
     if (selectedRole === "PARENT" && wantsToAddChild) {
-      if (!childFirstName || !childLastName || !childBirthDate) {
+      const birthDate = getFormattedBirthDate();
+      if (!childFirstName || !childLastName || !birthDate) {
         setErrorMsg("Fyll ut all informasjon om barnet eller velg 'Legg til senere'.");
         return;
       }
@@ -180,8 +228,9 @@ export default function RegisterScreen() {
       console.log("Registration successful!", loginResponse);
 
       if (selectedRole === "PARENT") {
-        if (wantsToAddChild && childFirstName && childLastName && childBirthDate) {
-          await addChild(loginResponse.user.profileId);
+        const birthDate = getFormattedBirthDate();
+        if (wantsToAddChild && childFirstName && childLastName && birthDate) {
+          await addChild(loginResponse.user.profileId, birthDate);
         }
         router.replace("/home");
       } else if (selectedRole === "STAFF" || selectedRole === "BOSS") {
@@ -195,7 +244,7 @@ export default function RegisterScreen() {
     }
   }
 
-  async function addChild(parentId: string) {
+  async function addChild(parentId: string, birthDate: string) {
     try {
       const token = await AsyncStorage.getItem("authToken");
 
@@ -208,16 +257,19 @@ export default function RegisterScreen() {
         body: JSON.stringify({
           firstName: childFirstName,
           lastName: childLastName,
-          birthDate: childBirthDate,
-          parentId: parentId,
+          birthDate: birthDate,
+          // Note: kindergartenId is optional, can be added later
         }),
       });
 
       if (res.ok) {
-        console.log("Child added");
+        console.log("Child added successfully");
+      } else {
+        const errorText = await res.text();
+        console.error("Failed to add child:", errorText);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error adding child:", error);
     }
   }
 
@@ -339,7 +391,7 @@ export default function RegisterScreen() {
                   </View>
 
                   {wantsToAddChild && (
-                    <>
+                    <View style={styles.childFormContainer}>
                       <Text style={styles.helpText}>
                         Du kan legge til flere barn og helsedata via profilen din.
                       </Text>
@@ -364,65 +416,94 @@ export default function RegisterScreen() {
 
                       <Text style={styles.label}>* Fødselsdato:</Text>
 
-                      {Platform.OS === "ios" ? (
-                        <>
-                          <TouchableOpacity
-                            style={styles.datePickerButton}
-                            onPress={handleDatePickerPress}
-                          >
-                            <Text style={childBirthDate ? styles.dateText : styles.datePlaceholder}>
-                              {childBirthDate
-                                ? new Date(childBirthDate).toLocaleDateString("nb-NO")
-                                : "Velg fødselsdato"}
-                            </Text>
-                          </TouchableOpacity>
+                      {/* Date input row */}
+                      <View style={styles.dateInputRow}>
+                        <View style={styles.dateInputWrapper}>
+                          <TextInput
+                            style={styles.dateInputSmall}
+                            placeholder="DD"
+                            placeholderTextColor={Colors.textMuted}
+                            value={birthDay}
+                            onChangeText={handleDayChange}
+                            keyboardType="number-pad"
+                            maxLength={2}
+                          />
+                          <Text style={styles.dateInputLabel}>Dag</Text>
+                        </View>
 
-                          {showDatePicker && (
-                            <View style={styles.datePickerContainer}>
-                              <DateTimePicker
-                                value={childBirthDateObj}
-                                mode="date"
-                                display="spinner"
-                                onChange={onDateChange}
-                                maximumDate={new Date()}
-                                minimumDate={new Date(2018, 0, 1)}
-                                locale="nb-NO"
-                              />
-                              <TouchableOpacity
-                                style={[styles.button, { marginTop: 8 }]}
-                                onPress={confirmIOSDate}
-                              >
-                                <Text style={styles.buttonText}>Bekreft dato</Text>
-                              </TouchableOpacity>
-                            </View>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <TouchableOpacity
-                            style={styles.datePickerButton}
-                            onPress={handleDatePickerPress}
-                          >
-                            <Text style={childBirthDate ? styles.dateText : styles.datePlaceholder}>
-                              {childBirthDate
-                                ? new Date(childBirthDate).toLocaleDateString("nb-NO")
-                                : "Trykk for å velge fødselsdato"}
-                            </Text>
-                          </TouchableOpacity>
+                        <Text style={styles.dateSeparator}>/</Text>
 
-                          {showDatePicker && (
+                        <View style={styles.dateInputWrapper}>
+                          <TextInput
+                            ref={monthRef}
+                            style={styles.dateInputSmall}
+                            placeholder="MM"
+                            placeholderTextColor={Colors.textMuted}
+                            value={birthMonth}
+                            onChangeText={handleMonthChange}
+                            keyboardType="number-pad"
+                            maxLength={2}
+                          />
+                          <Text style={styles.dateInputLabel}>Måned</Text>
+                        </View>
+
+                        <Text style={styles.dateSeparator}>/</Text>
+
+                        <View style={styles.dateInputWrapperLarge}>
+                          <TextInput
+                            ref={yearRef}
+                            style={styles.dateInputLarge}
+                            placeholder="ÅÅÅÅ"
+                            placeholderTextColor={Colors.textMuted}
+                            value={birthYear}
+                            onChangeText={handleYearChange}
+                            keyboardType="number-pad"
+                            maxLength={4}
+                          />
+                          <Text style={styles.dateInputLabel}>År</Text>
+                        </View>
+
+                        {/* Calendar picker button */}
+                        <TouchableOpacity
+                          style={styles.calendarButton}
+                          onPress={() => setShowCalendarPicker(true)}
+                        >
+                          <Ionicons name="calendar-outline" size={24} color={Colors.primaryBlue} />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Calendar picker modal/inline */}
+                      {showCalendarPicker && (
+                        Platform.OS === "ios" ? (
+                          <View style={styles.datePickerContainer}>
                             <DateTimePicker
-                              value={childBirthDateObj}
+                              value={calendarDate}
                               mode="date"
-                              display="default"
-                              onChange={onDateChange}
+                              display="spinner"
+                              onChange={onCalendarDateChange}
                               maximumDate={new Date()}
-                              minimumDate={new Date(2018, 0, 1)}
+                              minimumDate={new Date(2010, 0, 1)}
+                              locale="nb-NO"
                             />
-                          )}
-                        </>
+                            <TouchableOpacity
+                              style={styles.calendarConfirmButton}
+                              onPress={confirmCalendarDate}
+                            >
+                              <Text style={styles.buttonText}>Bekreft dato</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <DateTimePicker
+                            value={calendarDate}
+                            mode="date"
+                            display="default"
+                            onChange={onCalendarDateChange}
+                            maximumDate={new Date()}
+                            minimumDate={new Date(2010, 0, 1)}
+                          />
+                        )
                       )}
-                    </>
+                    </View>
                   )}
                 </>
               )}

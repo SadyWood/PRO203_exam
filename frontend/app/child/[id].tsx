@@ -1,10 +1,10 @@
 import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Switch, ActivityIndicator} from "react-native";
 import { Colors } from "@/constants/colors";
 import { Ionicons } from "@expo/vector-icons";
-import {useLocalSearchParams, useRouter} from "expo-router";
-import {useEffect, useState} from "react";
+import {useLocalSearchParams, useRouter, useFocusEffect} from "expo-router";
+import {useCallback, useState} from "react";
 import {getHealthData} from "@/services/healthApi";
-import {HealthDataInterface} from "@/models/health";
+import {HealthDataResponseDto} from "@/services/types/health";
 import {fetchCurrentUser} from "@/services/authApi";
 
 export default function ChildProfile() {
@@ -12,44 +12,67 @@ export default function ChildProfile() {
 
   const {id} = useLocalSearchParams<{id: string}>();
   const [childData, setChildData] = useState<any>(null);
-  const [healthData, setHealthData] = useState<HealthDataInterface | null>(null);
+  const [healthData, setHealthData] = useState<HealthDataResponseDto | null>(null);
   const [sharePhotos, setSharePhotos] = useState(true);
   const [tripPermission, setTripPermission] = useState(true);
   const [showNamePublic, setShowNamePublic] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchHealthData(){
-      try {
+  const loadData = useCallback(async () => {
+    if (!id) return;
 
-        setLoading(true);
-        const childRes = await fetchCurrentUser(`/api/children/${id}`);
+    try {
+      setLoading(true);
+      const childRes = await fetchCurrentUser(`/api/children/${id}`);
 
-        if(childRes.ok){
-          const child = await childRes.json();
-          setChildData(child);
-        }
-
-        const health = await getHealthData(id)
-        setHealthData(health);
-
-      }catch (error){
-        console.error(error);
-      }finally {
-        setLoading(false);
+      if(childRes.ok){
+        const child = await childRes.json();
+        setChildData(child);
       }
-    }
 
-    if(id){
-      fetchHealthData();
-    }
+      const health = await getHealthData(id);
+      setHealthData(health);
 
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  const allergiesList = healthData?.allergies
-    ? healthData.allergies.split(",").map(a => a.trim()).filter(Boolean)
+  // Reload data when screen comes into focus (e.g., returning from edit)
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  const allergiesList: string[] = healthData?.allergies
+    ? healthData.allergies.split(",").map((a: string) => a.trim()).filter(Boolean)
       : [];
 
+  // Show loading state while fetching data
+  if (loading) {
+    return (
+      <View style={[styles.screen, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={Colors.primaryBlue} />
+      </View>
+    );
+  }
+
+  // Show error state if no child data
+  if (!childData) {
+    return (
+      <View style={styles.screen}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/profile")}>
+          <Ionicons name="chevron-back" size={26} color={Colors.text} />
+        </TouchableOpacity>
+        <View style={styles.headerCard}>
+          <Text style={styles.childName}>Kunne ikke laste barnedata</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -85,7 +108,7 @@ export default function ChildProfile() {
       </View>
 
       <View style={styles.departmentBar}>
-        <Text style={styles.departmentText}>Avdeling: {childData.groupName}</Text>
+        <Text style={styles.departmentText}>Avdeling: {childData?.groupName || "Ikke tildelt"}</Text>
       </View>
 
       <Text style={styles.sectionTitle}>Tillatelser</Text>
@@ -116,8 +139,8 @@ export default function ChildProfile() {
         {allergiesList.length > 0 && (
             <View style={styles.healthGroup}>
               <Text style={styles.healthHeaderText}>Matallergier:</Text>
-              {allergiesList.map((allergy, index) => (
-                  <View style={styles.healthRow}>
+              {allergiesList.map((allergy: string, index: number) => (
+                  <View key={index} style={styles.healthRow}>
                     <Text style={styles.healthRowText}>{allergy}</Text>
                   </View>
               ))}
@@ -166,8 +189,11 @@ export default function ChildProfile() {
               </View>
           )}
 
-      <TouchableOpacity style={styles.editButton}>
-        <Text style={styles.editButtonText}>Rediger info</Text>
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => router.push(`/child/edit/${id}`)}
+      >
+        <Text style={styles.editButtonText}>Rediger helseinformasjon</Text>
       </TouchableOpacity>
     </ScrollView>
   );

@@ -68,8 +68,8 @@ public class ChildService {
     public ChildResponseDto createChild(CreateChildDto dto, UUID parentId) {
         log.info("Creating child: {} for parent: {}", dto.getFirstName(), parentId);
 
-        // Verify kindergarten exists
-        if (!kindergartenRepository.existsById(dto.getKindergartenId())) {
+        // Verify kindergarten exists (only if provided)
+        if (dto.getKindergartenId() != null && !kindergartenRepository.existsById(dto.getKindergartenId())) {
             throw new RuntimeException("Kindergarten not found");
         }
 
@@ -80,7 +80,7 @@ public class ChildService {
                 .birthDate(dto.getBirthDate())
                 .groupName(dto.getGroupName())
                 .groupId(dto.getGroupId())
-                .kindergartenId(dto.getKindergartenId())
+                .kindergartenId(dto.getKindergartenId()) // Can be null
                 .checkedIn(false)
                 .build();
 
@@ -98,8 +98,8 @@ public class ChildService {
                 .requiresIdVerification(false)
                 .build();
 
-        relationshipRepository.save(relationship);
-        log.info("Linked child {} to parent {}", savedChild.getId(), parentId);
+        ParentChildRelationship savedRelationship = relationshipRepository.save(relationship);
+        log.info("Linked child {} to parent {} with relationship id {}", savedChild.getId(), parentId, savedRelationship.getId());
 
         return toResponseDto(savedChild);
     }

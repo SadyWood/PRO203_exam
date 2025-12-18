@@ -50,9 +50,9 @@ export default function DailySummaryScreen() {
 
             const token = await AsyncStorage.getItem("authToken");
 
-            // Fetch children
+            // Fetch children - uses /api/children which auto-filters by authenticated parent
             const childrenRes = await fetch(
-                `${API_BASE_URL}/api/children/parent/${user.profileId}`,
+                `${API_BASE_URL}/api/children`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 

@@ -177,4 +177,75 @@ export const RegistrationStyles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text,
   },
+
+  // Child form container
+  childFormContainer: {
+    backgroundColor: Colors.primaryLightBlue,
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+  },
+
+  // Date input styles
+  dateInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateInputWrapper: {
+    flex: 1,
+    alignItems: "center",
+  },
+  dateInputWrapperLarge: {
+    flex: 1.5,
+    alignItems: "center",
+  },
+  dateInputSmall: {
+    width: "100%",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    borderColor: Colors.primaryBlue,
+    color: Colors.text,
+    backgroundColor: "#fff",
+    textAlign: "center",
+  },
+  dateInputLarge: {
+    width: "100%",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    borderColor: Colors.primaryBlue,
+    color: Colors.text,
+    backgroundColor: "#fff",
+    textAlign: "center",
+  },
+  dateInputLabel: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    marginTop: 4,
+  },
+  dateSeparator: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.textMuted,
+  },
+  calendarButton: {
+    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.primaryBlue,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarConfirmButton: {
+    marginTop: 12,
+    backgroundColor: Colors.primaryBlue,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
 });

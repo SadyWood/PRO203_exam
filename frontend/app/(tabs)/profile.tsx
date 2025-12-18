@@ -37,7 +37,7 @@ export default function ProfileScreen() {
 
                 if (user.profileId && user.role === "PARENT") {
                     await fetchParentProfile(user.profileId);
-                    await fetchChildren(user.profileId);
+                    await fetchChildren();
                 }
             }
         } catch (error) {
@@ -71,10 +71,11 @@ export default function ProfileScreen() {
         }
     }
 
-    async function fetchChildren(parentId: string) {
+    async function fetchChildren() {
         try {
             const token = await AsyncStorage.getItem("authToken");
-            const res = await fetch(`${API_BASE_URL}/api/children/parent/${parentId}`, {
+            // Use /api/children which auto-filters by authenticated parent
+            const res = await fetch(`${API_BASE_URL}/api/children`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

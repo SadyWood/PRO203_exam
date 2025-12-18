@@ -10,11 +10,13 @@ import { childrenApi } from "@/services/staffApi";
 import type { CheckerResponseDto } from "@/services/types/checker";
 import type { ChildResponseDto } from "@/services/types/staff";
 
-type CheckStatus = "NONE" | "INN" | "HENTET" | "SYK" | "FERIE";
+type CheckStatus = "NONE" | "PENDING" | "INN" | "HENTET" | "SYK" | "FERIE";
 
 type ChildStatus = {
   status: CheckStatus;
   time?: string;
+  checkInId?: string; // For confirming pending check-ins
+  droppedOffByName?: string;
 };
 
 function formatTimeFromIso(iso?: string | null): string | undefined {
@@ -52,8 +54,16 @@ export default function EmployeeCheckinScreen() {
         console.log("Feil ved uthenting av barn:", childErr);
       }
 
-      // Load active check-ins
+      // Load active check-ins (confirmed)
       const active: CheckerResponseDto[] = await checkerApi.getActive();
+
+      // Load pending check-ins (awaiting confirmation)
+      let pending: CheckerResponseDto[] = [];
+      try {
+        pending = await checkerApi.getPending();
+      } catch (pendingErr) {
+        console.log("Feil ved uthenting av ventende innsjekk:", pendingErr);
+      }
 
       setStatuses(() => {
         const statusMap: Record<string, ChildStatus> = {};
@@ -63,12 +73,26 @@ export default function EmployeeCheckinScreen() {
           statusMap[child.id] = { status: "NONE" };
         });
 
-        // Update with active check-ins
-        active.forEach((record) => {
+        // Update with pending check-ins (awaiting confirmation)
+        pending.forEach((record) => {
           statusMap[record.childId] = {
-            status: "INN",
+            status: "PENDING",
             time: formatTimeFromIso(record.checkInDate ?? record.initializedOn),
+            checkInId: record.id,
+            droppedOffByName: record.droppedOffPersonName ?? undefined,
           };
+        });
+
+        // Update with confirmed active check-ins (override pending if somehow both exist)
+        active.forEach((record) => {
+          // Only mark as INN if it's confirmed (has droppedOffConfirmedBy)
+          if (record.droppedOffConfirmedBy) {
+            statusMap[record.childId] = {
+              status: "INN",
+              time: formatTimeFromIso(record.checkInDate ?? record.initializedOn),
+              checkInId: record.id,
+            };
+          }
         });
 
         return statusMap;
@@ -89,11 +113,38 @@ export default function EmployeeCheckinScreen() {
   function statusLabel(childId: string): string {
     const s = statuses[childId];
     if (!s || s.status === "NONE") return "Ingen registrering enda";
-    if (s.status === "INN") return s.time ? `Ankom kl. ${s.time}` : "Ankommet";
+    if (s.status === "PENDING") return s.droppedOffByName
+      ? `Levert av ${s.droppedOffByName} kl. ${s.time} - Venter bekreftelse`
+      : s.time ? `Levert kl. ${s.time} - Venter bekreftelse` : "Venter bekreftelse";
+    if (s.status === "INN") return s.time ? `Bekreftet kl. ${s.time}` : "Bekreftet";
     if (s.status === "HENTET") return s.time ? `Hentet kl. ${s.time}` : "Hentet";
     if (s.status === "SYK") return "Registrert syk";
     if (s.status === "FERIE") return "Registrert ferie";
     return "Ingen registrering";
+  }
+
+  async function handleConfirmCheckIn(child: ChildResponseDto) {
+    const childStatus = statuses[child.id];
+    if (!childStatus?.checkInId) return;
+
+    setLoading(true);
+    try {
+      await checkerApi.confirmCheckIn(childStatus.checkInId);
+
+      // Update local status to confirmed
+      setStatuses((prev) => ({
+        ...prev,
+        [child.id]: {
+          ...prev[child.id],
+          status: "INN",
+        },
+      }));
+    } catch (err) {
+      console.log("Feil ved bekreftelse:", err);
+    } finally {
+      setSelectedChild(null);
+      setLoading(false);
+    }
   }
 
   async function handleSetStatus(child: ChildResponseDto, status: CheckStatus) {
@@ -162,22 +213,40 @@ export default function EmployeeCheckinScreen() {
             <Text style={{ color: Colors.textMuted }}>Ingen barn funnet</Text>
           </View>
         ) : (
-          children.map((child) => (
-            <TouchableOpacity
-              key={child.id}
-              style={EmployeeCheckinStyles.childCard}
-              onPress={() => setSelectedChild(child)}
-            >
-              <View style={EmployeeCheckinStyles.avatarCircle}>
-                <Text style={EmployeeCheckinStyles.avatarInitial}>{getChildInitial(child)}</Text>
-              </View>
+          children.map((child) => {
+            const childStatus = statuses[child.id];
+            const isPending = childStatus?.status === "PENDING";
+            const isConfirmed = childStatus?.status === "INN";
 
-              <Text style={EmployeeCheckinStyles.childName}>{getChildDisplayName(child)}</Text>
-              <Text style={EmployeeCheckinStyles.statusLabel}>
-                {statusLabel(child.id)}
-              </Text>
-            </TouchableOpacity>
-          ))
+            return (
+              <TouchableOpacity
+                key={child.id}
+                style={[
+                  EmployeeCheckinStyles.childCard,
+                  isPending && { backgroundColor: "#FEF3C7", borderWidth: 2, borderColor: "#F59E0B" },
+                  isConfirmed && { backgroundColor: "#DCFCE7", borderWidth: 2, borderColor: "#16A34A" },
+                ]}
+                onPress={() => setSelectedChild(child)}
+              >
+                <View style={[
+                  EmployeeCheckinStyles.avatarCircle,
+                  isPending && { backgroundColor: "#F59E0B" },
+                  isConfirmed && { backgroundColor: "#16A34A" },
+                ]}>
+                  <Text style={EmployeeCheckinStyles.avatarInitial}>{getChildInitial(child)}</Text>
+                </View>
+
+                <Text style={EmployeeCheckinStyles.childName}>{getChildDisplayName(child)}</Text>
+                <Text style={[
+                  EmployeeCheckinStyles.statusLabel,
+                  isPending && { color: "#92400E", fontWeight: "600" },
+                  isConfirmed && { color: "#166534" },
+                ]}>
+                  {statusLabel(child.id)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
 
@@ -198,19 +267,62 @@ export default function EmployeeCheckinScreen() {
               </Text>
             </View>
 
+            {/* Show pending info if applicable */}
+            {statuses[selectedChild.id]?.status === "PENDING" && (
+              <View style={{ backgroundColor: "#FEF3C7", padding: 12, borderRadius: 8, marginBottom: 12 }}>
+                <Text style={{ color: "#92400E", fontWeight: "600", textAlign: "center" }}>
+                  Levert av: {statuses[selectedChild.id]?.droppedOffByName || "Forelder"}
+                </Text>
+                <Text style={{ color: "#92400E", textAlign: "center", marginTop: 4 }}>
+                  Kl. {statuses[selectedChild.id]?.time}
+                </Text>
+              </View>
+            )}
+
             <View style={EmployeeCheckinStyles.popupButtons}>
-              {(["INN", "SYK", "HENTET", "FERIE"] as CheckStatus[]).map((s) => (
+              {/* Show confirm button if pending */}
+              {statuses[selectedChild.id]?.status === "PENDING" && (
                 <TouchableOpacity
-                  key={s}
-                  style={EmployeeCheckinStyles.popupButton}
-                  onPress={() => handleSetStatus(selectedChild, s)}
+                  style={[EmployeeCheckinStyles.popupButton, { backgroundColor: "#16A34A" }]}
+                  onPress={() => handleConfirmCheckIn(selectedChild)}
                   disabled={loading}
                 >
-                  <Text style={EmployeeCheckinStyles.popupButtonText}>
-                    Registrer {s.toLowerCase()}
+                  <Text style={[EmployeeCheckinStyles.popupButtonText, { color: "#fff" }]}>
+                    {loading ? "Bekrefter..." : "Bekreft mottak"}
                   </Text>
                 </TouchableOpacity>
-              ))}
+              )}
+
+              {/* Regular status buttons */}
+              {statuses[selectedChild.id]?.status !== "PENDING" && (
+                <>
+                  {(["INN", "SYK", "HENTET", "FERIE"] as CheckStatus[]).map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      style={EmployeeCheckinStyles.popupButton}
+                      onPress={() => handleSetStatus(selectedChild, s)}
+                      disabled={loading}
+                    >
+                      <Text style={EmployeeCheckinStyles.popupButtonText}>
+                        Registrer {s.toLowerCase()}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+
+              {/* Also show checkout option for pending (in case parent made mistake) */}
+              {statuses[selectedChild.id]?.status === "PENDING" && (
+                <TouchableOpacity
+                  style={[EmployeeCheckinStyles.popupButton, { backgroundColor: "#DC2626", marginTop: 8 }]}
+                  onPress={() => handleSetStatus(selectedChild, "HENTET")}
+                  disabled={loading}
+                >
+                  <Text style={[EmployeeCheckinStyles.popupButtonText, { color: "#fff" }]}>
+                    Avvis (Registrer hentet)
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>

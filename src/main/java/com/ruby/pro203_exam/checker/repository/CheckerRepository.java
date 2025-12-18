@@ -31,4 +31,17 @@ public interface CheckerRepository extends JpaRepository<CheckInOut, UUID> {
             "WHERE c.checkInConfirmedByStaff = :staffId " +
             "OR c.checkOutApprovedByStaff = :staffId")
     List<CheckInOut> findByStaffMember(@Param("staffId") UUID staffId);
+
+    // Find pending check-ins (not confirmed by staff) for a kindergarten
+    @Query("SELECT c FROM CheckInOut c " +
+            "JOIN Child ch ON c.childId = ch.id " +
+            "WHERE c.checkInConfirmedByStaff IS NULL " +
+            "AND c.checkOutTime IS NULL " +
+            "AND ch.kindergartenId = :kindergartenId " +
+            "ORDER BY c.checkInTime DESC")
+    List<CheckInOut> findPendingConfirmationsByKindergarten(@Param("kindergartenId") UUID kindergartenId);
+
+    // Find active check-in for a specific child (for parent to see status)
+    @Query("SELECT c FROM CheckInOut c WHERE c.childId = :childId AND c.checkOutTime IS NULL ORDER BY c.checkInTime DESC")
+    Optional<CheckInOut> findActiveCheckInByChildId(@Param("childId") UUID childId);
 }

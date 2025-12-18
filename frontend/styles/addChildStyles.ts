@@ -228,4 +228,31 @@ export const AddChildStyles = StyleSheet.create({
         color: Colors.textMuted,
         marginTop: 2,
     },
+    calendarButton: {
+        padding: 12,
+        backgroundColor: "#fff",
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.primaryLightBlue,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    calendarPickerContainer: {
+        backgroundColor: Colors.primaryLightBlue,
+        borderRadius: 8,
+        padding: 12,
+        marginTop: 8,
+    },
+    calendarConfirmButton: {
+        marginTop: 12,
+        backgroundColor: Colors.green,
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    calendarConfirmButtonText: {
+        color: Colors.text,
+        fontWeight: "600",
+        fontSize: 14,
+    },
 });
