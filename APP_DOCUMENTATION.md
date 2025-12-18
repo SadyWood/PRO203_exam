@@ -501,6 +501,25 @@ Frontend                                Backend
 - kindergartenName, kindergartenAddress
 
 ---
+### Frontend user authentication & onboarding flow
+
+**Authentication Process**
+- User clicks the start button on startpage.
+- Authentication is handeled by Google.
+- Conditional routing. Wheter user is new or returning.
+
+**Role-based registration**
+- Upon registration, there lays a role to be chosen. Each role with its own access limits.
+- Parent collects personal contact information. Prompted to add a child immediately or skip on registration, and instead add it later.
+- Employee collects personal information and requires the user to select a specific kindergarten if its created by the manager.
+- Boss/manager has admin access.
+
+**RBAC**
+- Parent: Overview of their own children, checkin functionality, access to blog, calendar and messages.
+- Employee: Ability to confirm child check-ins, access to child profiles, messaging, blog, calendar and activity logging, for ex diaper changes.
+- Manager: Full admin access to all platform services, including facility creation, department management and staff assignments.
+
+---
 
 ## Styling
 
